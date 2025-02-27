@@ -92,7 +92,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: "John Doe",
         isOnline: true,
         lastSeen: new Date().toISOString(),
-        avatar: "https://github.com/shadcn.png"
+        photoURL: "https://github.com/shadcn.png", // Changed from avatar to photoURL
+        email: email // Add email to match User type
       };
       
       // Save to state
@@ -129,7 +130,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name,
         isOnline: true,
         lastSeen: new Date().toISOString(),
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
+        photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`, // Changed from avatar to photoURL
+        email // Add email to match User type
       };
       
       // Save to state
