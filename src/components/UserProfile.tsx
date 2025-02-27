@@ -1,12 +1,14 @@
 
 import { User } from '@/lib/types';
 import { Button } from './ui/button';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, LogOut } from 'lucide-react';
 import { Input } from './ui/input';
 import { useState } from 'react';
 import { useChatStore } from '@/lib/store';
 import { updateUserStatus } from '@/lib/firebase';
 import { toast } from './ui/use-toast';
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfileProps {
   user: User;
@@ -19,6 +21,8 @@ const UserProfile = ({ user, showBackButton, onBack }: UserProfileProps) => {
   const [name, setName] = useState(user.name);
   const { setCurrentUser, currentUser } = useChatStore();
   const isOwnProfile = currentUser?.id === user.id;
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleSave = async () => {
     try {
@@ -41,6 +45,11 @@ const UserProfile = ({ user, showBackButton, onBack }: UserProfileProps) => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
@@ -103,6 +112,15 @@ const UserProfile = ({ user, showBackButton, onBack }: UserProfileProps) => {
                 Edit Profile
               </Button>
             )}
+            
+            {/* Logout button */}
+            <Button 
+              className="w-full bg-red-600 hover:bg-red-700 text-white mt-4 flex items-center justify-center gap-2"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
 
             {/* Future authentication fields - only shown on own profile */}
             <div className="space-y-4 pt-4 border-t border-gray-200">

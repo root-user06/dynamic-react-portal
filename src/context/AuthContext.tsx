@@ -1,17 +1,19 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
+import { User } from '@/lib/types';
 
 // Define the user type
-export type User = {
+export type AuthUser = {
   id: string;
   name: string;
+  email: string;
   avatar?: string;
 };
 
 // Define the context type
 type AuthContextType = {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -40,16 +42,58 @@ const MOCK_USERS = [
   }
 ];
 
+// Helper function to save user in cookies
+const saveUserToCookie = (user: AuthUser) => {
+  const expires = new Date();
+  expires.setDate(expires.getDate() + 7); // 7 days from now
+  document.cookie = `chatUser=${JSON.stringify(user)};expires=${expires.toUTCString()};path=/`;
+};
+
+// Helper function to get user from cookies
+const getUserFromCookie = (): AuthUser | null => {
+  const cookies = document.cookie.split(';');
+  const userCookie = cookies.find(cookie => cookie.trim().startsWith('chatUser='));
+  
+  if (userCookie) {
+    try {
+      return JSON.parse(userCookie.split('=')[1]);
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  return null;
+};
+
+// Helper function to remove user from cookies
+const removeUserFromCookie = () => {
+  document.cookie = 'chatUser=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Check if user is already logged in
   useEffect(() => {
-    const storedUser = localStorage.getItem('chatUser');
+    // Try to get user from session storage first
+    const storedUser = sessionStorage.getItem('chatUser');
+    
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+      setIsLoading(false);
+      return;
     }
+    
+    // If not in session storage, try cookies
+    const cookieUser = getUserFromCookie();
+    
+    if (cookieUser) {
+      setUser(cookieUser);
+      // Also save to session storage for faster access
+      sessionStorage.setItem('chatUser', JSON.stringify(cookieUser));
+    }
+    
     setIsLoading(false);
   }, []);
 
@@ -66,14 +110,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
       
       if (foundUser) {
-        const userData: User = {
+        const userData: AuthUser = {
           id: foundUser.id,
           name: foundUser.name,
+          email: foundUser.email,
           avatar: foundUser.avatar
         };
         
         setUser(userData);
-        localStorage.setItem('chatUser', JSON.stringify(userData));
+        
+        // Save user to both session storage and cookies
+        sessionStorage.setItem('chatUser', JSON.stringify(userData));
+        saveUserToCookie(userData);
+        
         toast.success("Login successful");
       } else {
         toast.error("Invalid email or password");
@@ -99,16 +148,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Create new user (in a real app, this would be an API call)
-      const newUser: User = {
+      const newUser: AuthUser = {
         id: `${MOCK_USERS.length + 1}`,
         name,
+        email,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
       };
       
       // In a real app, we would save the user to the database here
       
       setUser(newUser);
-      localStorage.setItem('chatUser', JSON.stringify(newUser));
+      
+      // Save user to both session storage and cookies
+      sessionStorage.setItem('chatUser', JSON.stringify(newUser));
+      saveUserToCookie(newUser);
+      
       toast.success("Registration successful");
     } finally {
       setIsLoading(false);
@@ -118,7 +172,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Logout function
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('chatUser');
+    sessionStorage.removeItem('chatUser');
+    removeUserFromCookie();
     toast.success("Logged out successfully");
   };
 

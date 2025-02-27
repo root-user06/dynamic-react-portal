@@ -9,12 +9,12 @@ import { ChatProvider } from './context/ChatContext';
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" attribute="class" enableSystem={false} disableTransitionOnChange>
+    <ThemeProvider defaultTheme="light" attribute="class" enableSystem={false} disableTransitionOnChange>
       <AuthProvider>
         <ChatProvider>
           <RouterProvider router={router} />
           <Toaster />
-          <SonnerToaster position="top-center" theme="dark" />
+          <SonnerToaster position="top-center" theme="light" />
         </ChatProvider>
       </AuthProvider>
     </ThemeProvider>
