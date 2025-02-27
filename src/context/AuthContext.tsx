@@ -1,12 +1,17 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
-import { useChatStore } from '@/lib/store';
-import { User as UserType } from '@/lib/types';
+
+// Define the user type
+export type User = {
+  id: string;
+  name: string;
+  avatar?: string;
+};
 
 // Define the context type
 type AuthContextType = {
-  user: UserType | null;
+  user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -14,103 +19,66 @@ type AuthContextType = {
   logout: () => void;
 };
 
-// Create the context
+// Create the initial context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Cookie helper functions
-const setCookie = (name: string, value: string, days: number = 7) => {
-  const date = new Date();
-  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-  const expires = `; expires=${date.toUTCString()}`;
-  document.cookie = `${name}=${value}${expires}; path=/; SameSite=Strict`;
-};
-
-const getCookie = (name: string): string | null => {
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+// Mock users for demo purposes
+const MOCK_USERS = [
+  {
+    id: '1',
+    name: 'John Doe',
+    email: 'john@example.com',
+    password: 'password123',
+    avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=random'
+  },
+  {
+    id: '2',
+    name: 'Jane Smith',
+    email: 'jane@example.com',
+    password: 'password123',
+    avatar: 'https://ui-avatars.com/api/?name=Jane+Smith&background=random'
   }
-  return null;
-};
-
-const removeCookie = (name: string) => {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict`;
-};
+];
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserType | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { setCurrentUser } = useChatStore();
 
-  // Check if user is already logged in from cookies or session storage
+  // Check if user is already logged in
   useEffect(() => {
-    const loadUserFromStorage = () => {
-      try {
-        // First check session storage
-        const sessionUser = sessionStorage.getItem('chatUser');
-        if (sessionUser) {
-          const userData = JSON.parse(sessionUser);
-          setUser(userData);
-          setCurrentUser(userData);
-          return;
-        }
-        
-        // Then check cookies
-        const cookieUser = getCookie('chatUser');
-        if (cookieUser) {
-          const userData = JSON.parse(cookieUser);
-          setUser(userData);
-          setCurrentUser(userData);
-          // Update session storage too
-          sessionStorage.setItem('chatUser', cookieUser);
-        }
-      } catch (error) {
-        console.error('Error loading user from storage:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadUserFromStorage();
-  }, [setCurrentUser]);
+    const storedUser = localStorage.getItem('chatUser');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setIsLoading(false);
+  }, []);
 
   // Login function
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     
     try {
-      // Here we're using the mockData from useChatStore
-      // In a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock login - in a real app, this would validate with a server
-      const mockUser: UserType = {
-        id: "1",
-        name: "John Doe",
-        isOnline: true,
-        lastSeen: new Date().toISOString(),
-        photoURL: "https://github.com/shadcn.png", // Changed from avatar to photoURL
-        email: email // Add email to match User type
-      };
+      const foundUser = MOCK_USERS.find(
+        u => u.email === email && u.password === password
+      );
       
-      // Save to state
-      setUser(mockUser);
-      
-      // Save to chat store
-      setCurrentUser(mockUser);
-      
-      // Save to storage mechanisms
-      const userJson = JSON.stringify(mockUser);
-      sessionStorage.setItem('chatUser', userJson);
-      setCookie('chatUser', userJson);
-      
-      toast.success("Login successful");
-    } catch (error) {
-      toast.error("Invalid email or password");
-      throw error;
+      if (foundUser) {
+        const userData: User = {
+          id: foundUser.id,
+          name: foundUser.name,
+          avatar: foundUser.avatar
+        };
+        
+        setUser(userData);
+        localStorage.setItem('chatUser', JSON.stringify(userData));
+        toast.success("Login successful");
+      } else {
+        toast.error("Invalid email or password");
+        throw new Error('Invalid email or password');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -122,33 +90,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Create a new user (in a real app, this would be an API call)
-      const newUser: UserType = {
-        id: Date.now().toString(),
+      // Check if email already exists
+      if (MOCK_USERS.some(u => u.email === email)) {
+        toast.error("Email already in use");
+        throw new Error('Email already in use');
+      }
+      
+      // Create new user (in a real app, this would be an API call)
+      const newUser: User = {
+        id: `${MOCK_USERS.length + 1}`,
         name,
-        isOnline: true,
-        lastSeen: new Date().toISOString(),
-        photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`, // Changed from avatar to photoURL
-        email // Add email to match User type
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
       };
       
-      // Save to state
+      // In a real app, we would save the user to the database here
+      
       setUser(newUser);
-      
-      // Save to chat store
-      setCurrentUser(newUser);
-      
-      // Save to storage mechanisms  
-      const userJson = JSON.stringify(newUser);
-      sessionStorage.setItem('chatUser', userJson);
-      setCookie('chatUser', userJson);
-      
+      localStorage.setItem('chatUser', JSON.stringify(newUser));
       toast.success("Registration successful");
-    } catch (error) {
-      toast.error("Registration failed");
-      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -156,16 +117,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout function
   const logout = () => {
-    // Clear state
     setUser(null);
-    
-    // Clear storage mechanisms
-    sessionStorage.removeItem('chatUser');
-    removeCookie('chatUser');
-    
-    // Clear from chat store
-    setCurrentUser(null);
-    
+    localStorage.removeItem('chatUser');
     toast.success("Logged out successfully");
   };
 

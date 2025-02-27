@@ -75,13 +75,17 @@ const Chat = () => {
     }
   };
 
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
   const renderBottomNavigation = () => (
-    <div className="fixed bottom-0 left-0 right-0 border-t border-white/20 bg-[#09122C]">
+    <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white">
       <div className="flex items-center justify-around py-2">
         <button
           onClick={() => handleTabChange('chats')}
           className={`flex flex-col items-center p-2 ${
-            activeTab === 'chats' ? 'text-[#46C8B6]' : 'text-gray-400'
+            activeTab === 'chats' ? 'text-purple-600' : 'text-gray-600'
           }`}
         >
           <MessageCircle className="h-6 w-6" />
@@ -90,7 +94,7 @@ const Chat = () => {
         <button
           onClick={() => handleTabChange('profile')}
           className={`flex flex-col items-center p-2 ${
-            activeTab === 'profile' ? 'text-[#46C8B6]' : 'text-gray-400'
+            activeTab === 'profile' ? 'text-purple-600' : 'text-gray-600'
           }`}
         >
           <User className="h-6 w-6" />
@@ -102,7 +106,7 @@ const Chat = () => {
 
   if (isMobile) {
     return (
-      <div className="h-screen bg-[#09122C] text-white flex flex-col">
+      <div className="h-screen bg-white flex flex-col">
         {selectedUser ? (
           <ChatWindow 
             showBackButton={true} 
@@ -133,16 +137,16 @@ const Chat = () => {
   }
 
   return (
-    <div className="h-screen bg-[#09122C] text-white relative overflow-hidden">
+    <div className="h-screen bg-white relative overflow-hidden">
       <div className="flex h-full">
-        <div className="w-80 border-r border-white/20">
+        <div className="w-80 border-r border-gray-200">
           <UserList onChatSelect={setSelectedUser} />
         </div>
         <div className="flex-1 relative">
           <ChatWindow />
         </div>
         {selectedUser && (
-          <div className="w-80 border-l border-white/20">
+          <div className="w-80 border-l border-gray-200">
             <UserProfile user={selectedUser} />
           </div>
         )}
