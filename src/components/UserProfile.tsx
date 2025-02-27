@@ -106,7 +106,6 @@ const UserProfile = ({ user, showBackButton, onBack }: UserProfileProps) => {
               </div>
             ) : (
               <Button 
-                className="w-full" 
                 variant="outline"
                 onClick={() => setIsEditing(true)}
                 className="border-white/20 text-white hover:bg-white/10 w-full"
