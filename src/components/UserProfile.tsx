@@ -114,7 +114,7 @@ const UserProfile = ({ user, showBackButton, onBack }: UserProfileProps) => {
               </Button>
             )}
 
-            {/* Logout button */}
+            {/* Logout button with red background and icon */}
             <Button 
               className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white flex gap-2 items-center justify-center"
               onClick={handleLogout}

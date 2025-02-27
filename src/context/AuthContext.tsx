@@ -1,17 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
-
-// Define the user type
-export type User = {
-  id: string;
-  name: string;
-  avatar?: string;
-};
+import { useChatStore } from '@/lib/store';
+import { User as UserType } from '@/lib/types';
 
 // Define the context type
 type AuthContextType = {
-  user: User | null;
+  user: UserType | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -19,26 +14,8 @@ type AuthContextType = {
   logout: () => void;
 };
 
-// Create the initial context
+// Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Mock users for demo purposes
-const MOCK_USERS = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    password: 'password123',
-    avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=random'
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    password: 'password123',
-    avatar: 'https://ui-avatars.com/api/?name=Jane+Smith&background=random'
-  }
-];
 
 // Cookie helper functions
 const setCookie = (name: string, value: string, days: number = 7) => {
@@ -64,25 +41,29 @@ const removeCookie = (name: string) => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { setCurrentUser } = useChatStore();
 
-  // Check if user is already logged in
+  // Check if user is already logged in from cookies or session storage
   useEffect(() => {
     const loadUserFromStorage = () => {
       try {
         // First check session storage
         const sessionUser = sessionStorage.getItem('chatUser');
         if (sessionUser) {
-          setUser(JSON.parse(sessionUser));
+          const userData = JSON.parse(sessionUser);
+          setUser(userData);
+          setCurrentUser(userData);
           return;
         }
         
         // Then check cookies
         const cookieUser = getCookie('chatUser');
         if (cookieUser) {
-          const parsedUser = JSON.parse(cookieUser);
-          setUser(parsedUser);
+          const userData = JSON.parse(cookieUser);
+          setUser(userData);
+          setCurrentUser(userData);
           // Update session storage too
           sessionStorage.setItem('chatUser', cookieUser);
         }
@@ -94,40 +75,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     loadUserFromStorage();
-  }, []);
+  }, [setCurrentUser]);
 
   // Login function
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Here we're using the mockData from useChatStore
+      // In a real app, this would be an API call
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      const foundUser = MOCK_USERS.find(
-        u => u.email === email && u.password === password
-      );
+      // Mock login - in a real app, this would validate with a server
+      const mockUser: UserType = {
+        id: "1",
+        name: "John Doe",
+        isOnline: true,
+        lastSeen: new Date().toISOString(),
+        avatar: "https://github.com/shadcn.png"
+      };
       
-      if (foundUser) {
-        const userData: User = {
-          id: foundUser.id,
-          name: foundUser.name,
-          avatar: foundUser.avatar
-        };
-        
-        // Save to state
-        setUser(userData);
-        
-        // Save to storage mechanisms
-        const userJson = JSON.stringify(userData);
-        sessionStorage.setItem('chatUser', userJson);
-        setCookie('chatUser', userJson);
-        
-        toast.success("Login successful");
-      } else {
-        toast.error("Invalid email or password");
-        throw new Error('Invalid email or password');
-      }
+      // Save to state
+      setUser(mockUser);
+      
+      // Save to chat store
+      setCurrentUser(mockUser);
+      
+      // Save to storage mechanisms
+      const userJson = JSON.stringify(mockUser);
+      sessionStorage.setItem('chatUser', userJson);
+      setCookie('chatUser', userJson);
+      
+      toast.success("Login successful");
+    } catch (error) {
+      toast.error("Invalid email or password");
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -139,25 +121,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Check if email already exists
-      if (MOCK_USERS.some(u => u.email === email)) {
-        toast.error("Email already in use");
-        throw new Error('Email already in use');
-      }
-      
-      // Create new user (in a real app, this would be an API call)
-      const newUser: User = {
-        id: `${MOCK_USERS.length + 1}`,
+      // Create a new user (in a real app, this would be an API call)
+      const newUser: UserType = {
+        id: Date.now().toString(),
         name,
+        isOnline: true,
+        lastSeen: new Date().toISOString(),
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
       };
       
-      // In a real app, we would save the user to the database here
-      
       // Save to state
       setUser(newUser);
+      
+      // Save to chat store
+      setCurrentUser(newUser);
       
       // Save to storage mechanisms  
       const userJson = JSON.stringify(newUser);
@@ -165,6 +144,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCookie('chatUser', userJson);
       
       toast.success("Registration successful");
+    } catch (error) {
+      toast.error("Registration failed");
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -178,6 +160,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Clear storage mechanisms
     sessionStorage.removeItem('chatUser');
     removeCookie('chatUser');
+    
+    // Clear from chat store
+    setCurrentUser(null);
     
     toast.success("Logged out successfully");
   };

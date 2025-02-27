@@ -75,10 +75,6 @@ const Chat = () => {
     }
   };
 
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
-
   const renderBottomNavigation = () => (
     <div className="fixed bottom-0 left-0 right-0 border-t border-white/20 bg-[#09122C]">
       <div className="flex items-center justify-around py-2">

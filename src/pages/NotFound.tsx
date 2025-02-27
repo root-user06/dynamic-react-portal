@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -18,7 +17,7 @@ const NotFound = () => {
         </p>
         <Button 
           onClick={() => navigate(isAuthenticated ? '/chat' : '/')}
-          className="bg-[#46C8B6] hover:bg-[#38a596] text-black"
+          className="bg-[#46C8B6] hover:bg-[#38A596] text-black"
         >
           Go to {isAuthenticated ? 'Chat' : 'Home'}
         </Button>
