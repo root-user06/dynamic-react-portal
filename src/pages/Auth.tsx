@@ -46,14 +46,14 @@ const Auth: React.FC = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col bg-[#1A5E63] text-white">
+    <div className="min-h-screen flex flex-col bg-[#09122C] text-white">
       {/* Header */}
       <div className="p-4 flex items-center">
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={() => navigate('/')}
-          className="text-white"
+          className="text-white hover:bg-white/10"
         >
           <ArrowLeft />
         </Button>
@@ -82,7 +82,7 @@ const Auth: React.FC = () => {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
                 required
-                className="bg-[#333333] border-0 text-white"
+                className="bg-white/10 border-white/20 text-white"
               />
             </div>
           )}
@@ -96,7 +96,7 @@ const Auth: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="bg-[#333333] border-0 text-white"
+              className="bg-white/10 border-white/20 text-white"
             />
           </div>
           
@@ -110,7 +110,7 @@ const Auth: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="bg-[#333333] border-0 text-white pr-10"
+                className="bg-white/10 border-white/20 text-white pr-10"
               />
               <button 
                 type="button"
@@ -134,20 +134,18 @@ const Auth: React.FC = () => {
           </Button>
         </form>
         
-        {/* Only show the account switch link in register mode */}
-        {isRegisterMode && (
-          <div className="mt-6 text-center">
-            <p className="text-gray-400">
-              Already have an account?
-              <Link
-                to="/auth/login"
-                className="ml-1 text-[#46C8B6] hover:underline"
-              >
-                Sign In
-              </Link>
-            </p>
-          </div>
-        )}
+        {/* Account switching links */}
+        <div className="mt-6 text-center">
+          <p className="text-gray-400">
+            {isRegisterMode ? 'Already have an account?' : "Don't have an account?"}
+            <Link
+              to={isRegisterMode ? "/auth/login" : "/auth/register"}
+              className="ml-1 text-[#46C8B6] hover:underline"
+            >
+              {isRegisterMode ? 'Sign In' : 'Create Account'}
+            </Link>
+          </p>
+        </div>
       </div>
       
       {/* Footer */}

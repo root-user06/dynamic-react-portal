@@ -40,17 +40,60 @@ const MOCK_USERS = [
   }
 ];
 
+// Cookie helper functions
+const setCookie = (name: string, value: string, days: number = 7) => {
+  const date = new Date();
+  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  const expires = `; expires=${date.toUTCString()}`;
+  document.cookie = `${name}=${value}${expires}; path=/; SameSite=Strict`;
+};
+
+const getCookie = (name: string): string | null => {
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+};
+
+const removeCookie = (name: string) => {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict`;
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Check if user is already logged in
   useEffect(() => {
-    const storedUser = localStorage.getItem('chatUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    const loadUserFromStorage = () => {
+      try {
+        // First check session storage
+        const sessionUser = sessionStorage.getItem('chatUser');
+        if (sessionUser) {
+          setUser(JSON.parse(sessionUser));
+          return;
+        }
+        
+        // Then check cookies
+        const cookieUser = getCookie('chatUser');
+        if (cookieUser) {
+          const parsedUser = JSON.parse(cookieUser);
+          setUser(parsedUser);
+          // Update session storage too
+          sessionStorage.setItem('chatUser', cookieUser);
+        }
+      } catch (error) {
+        console.error('Error loading user from storage:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadUserFromStorage();
   }, []);
 
   // Login function
@@ -72,8 +115,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar: foundUser.avatar
         };
         
+        // Save to state
         setUser(userData);
-        localStorage.setItem('chatUser', JSON.stringify(userData));
+        
+        // Save to storage mechanisms
+        const userJson = JSON.stringify(userData);
+        sessionStorage.setItem('chatUser', userJson);
+        setCookie('chatUser', userJson);
+        
         toast.success("Login successful");
       } else {
         toast.error("Invalid email or password");
@@ -107,8 +156,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // In a real app, we would save the user to the database here
       
+      // Save to state
       setUser(newUser);
-      localStorage.setItem('chatUser', JSON.stringify(newUser));
+      
+      // Save to storage mechanisms  
+      const userJson = JSON.stringify(newUser);
+      sessionStorage.setItem('chatUser', userJson);
+      setCookie('chatUser', userJson);
+      
       toast.success("Registration successful");
     } finally {
       setIsLoading(false);
@@ -117,8 +172,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout function
   const logout = () => {
+    // Clear state
     setUser(null);
-    localStorage.removeItem('chatUser');
+    
+    // Clear storage mechanisms
+    sessionStorage.removeItem('chatUser');
+    removeCookie('chatUser');
+    
     toast.success("Logged out successfully");
   };
 
