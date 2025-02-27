@@ -2,13 +2,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { User } from '@/lib/types';
+import { 
+  registerWithEmail, 
+  loginWithEmail, 
+  loginWithGoogle,
+  updateUserStatus
+} from '../lib/firebase';
 
 // Define the user type
 export type AuthUser = {
   id: string;
   name: string;
   email: string;
-  avatar?: string;
+  photoURL?: string;
 };
 
 // Define the context type
@@ -18,29 +24,12 @@ type AuthContextType = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => void;
 };
 
 // Create the initial context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Mock users for demo purposes
-const MOCK_USERS = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    password: 'password123',
-    avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=random'
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    password: 'password123',
-    avatar: 'https://ui-avatars.com/api/?name=Jane+Smith&background=random'
-  }
-];
 
 // Helper function to save user in cookies
 const saveUserToCookie = (user: AuthUser) => {
@@ -76,25 +65,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check if user is already logged in
   useEffect(() => {
-    // Try to get user from session storage first
-    const storedUser = sessionStorage.getItem('chatUser');
+    const loadUserFromStorage = async () => {
+      try {
+        // Try to get user from session storage first
+        const storedUser = sessionStorage.getItem('chatUser');
+        
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          
+          // Update user status in Firebase
+          await updateUserStatus({
+            id: userData.id,
+            name: userData.name,
+            isOnline: true,
+            lastSeen: new Date().toISOString(),
+            email: userData.email,
+            photoURL: userData.photoURL
+          });
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        // If not in session storage, try cookies
+        const cookieUser = getUserFromCookie();
+        
+        if (cookieUser) {
+          setUser(cookieUser);
+          
+          // Update user status in Firebase
+          await updateUserStatus({
+            id: cookieUser.id,
+            name: cookieUser.name,
+            isOnline: true,
+            lastSeen: new Date().toISOString(),
+            email: cookieUser.email,
+            photoURL: cookieUser.photoURL
+          });
+          
+          // Also save to session storage for faster access
+          sessionStorage.setItem('chatUser', JSON.stringify(cookieUser));
+        }
+      } catch (error) {
+        console.error("Error loading user from storage:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsLoading(false);
-      return;
-    }
-    
-    // If not in session storage, try cookies
-    const cookieUser = getUserFromCookie();
-    
-    if (cookieUser) {
-      setUser(cookieUser);
-      // Also save to session storage for faster access
-      sessionStorage.setItem('chatUser', JSON.stringify(cookieUser));
-    }
-    
-    setIsLoading(false);
+    loadUserFromStorage();
   }, []);
 
   // Login function
@@ -102,32 +122,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use Firebase authentication
+      const userData = await loginWithEmail(email, password);
       
-      const foundUser = MOCK_USERS.find(
-        u => u.email === email && u.password === password
-      );
+      const authUser: AuthUser = {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email || '',
+        photoURL: userData.photoURL
+      };
       
-      if (foundUser) {
-        const userData: AuthUser = {
-          id: foundUser.id,
-          name: foundUser.name,
-          email: foundUser.email,
-          avatar: foundUser.avatar
-        };
-        
-        setUser(userData);
-        
-        // Save user to both session storage and cookies
-        sessionStorage.setItem('chatUser', JSON.stringify(userData));
-        saveUserToCookie(userData);
-        
-        toast.success("Login successful");
-      } else {
-        toast.error("Invalid email or password");
-        throw new Error('Invalid email or password');
-      }
+      setUser(authUser);
+      
+      // Save user to both session storage and cookies
+      sessionStorage.setItem('chatUser', JSON.stringify(authUser));
+      saveUserToCookie(authUser);
+      
+      toast.success("Login successful");
+    } catch (error: any) {
+      toast.error(error.message || "Invalid email or password");
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -138,32 +152,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use Firebase authentication
+      const userData = await registerWithEmail(email, password, name);
       
-      // Check if email already exists
-      if (MOCK_USERS.some(u => u.email === email)) {
-        toast.error("Email already in use");
-        throw new Error('Email already in use');
-      }
-      
-      // Create new user (in a real app, this would be an API call)
-      const newUser: AuthUser = {
-        id: `${MOCK_USERS.length + 1}`,
-        name,
-        email,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
+      const authUser: AuthUser = {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email || '',
+        photoURL: userData.photoURL
       };
       
-      // In a real app, we would save the user to the database here
-      
-      setUser(newUser);
+      setUser(authUser);
       
       // Save user to both session storage and cookies
-      sessionStorage.setItem('chatUser', JSON.stringify(newUser));
-      saveUserToCookie(newUser);
+      sessionStorage.setItem('chatUser', JSON.stringify(authUser));
+      saveUserToCookie(authUser);
       
       toast.success("Registration successful");
+    } catch (error: any) {
+      toast.error(error.message || "Registration failed");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Google login function
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Use Firebase Google authentication
+      const userData = await loginWithGoogle();
+      
+      const authUser: AuthUser = {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email || '',
+        photoURL: userData.photoURL
+      };
+      
+      setUser(authUser);
+      
+      // Save user to both session storage and cookies
+      sessionStorage.setItem('chatUser', JSON.stringify(authUser));
+      saveUserToCookie(authUser);
+      
+      toast.success("Google login successful");
+    } catch (error: any) {
+      toast.error(error.message || "Google login failed");
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -171,6 +209,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout function
   const logout = () => {
+    if (user) {
+      // Update user status to offline in Firebase
+      updateUserStatus({
+        id: user.id,
+        name: user.name,
+        isOnline: false,
+        lastSeen: new Date().toISOString(),
+        email: user.email,
+        photoURL: user.photoURL
+      });
+    }
+    
     setUser(null);
     sessionStorage.removeItem('chatUser');
     removeUserFromCookie();
@@ -185,6 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         register,
+        loginWithGoogle: handleGoogleLogin,
         logout
       }}
     >

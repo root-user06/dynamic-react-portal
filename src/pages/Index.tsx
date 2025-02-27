@@ -1,23 +1,10 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useChatStore } from '../lib/store';
 import { Button } from "@/components/ui/button";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
 import { motion } from 'framer-motion';
 import { toast } from "@/components/ui/use-toast";
-import { 
-  registerWithEmail, 
-  loginWithEmail, 
-  loginWithGoogle,
-  resetPassword,
-} from '../lib/firebase';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Tabs,
   TabsContent,
@@ -25,127 +12,45 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Mail, Lock, User as UserIcon, Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { setCurrentUser, currentUser, lastActiveChatId, setSelectedUser, onlineUsers } = useChatStore();
-  const [isRedirecting, setIsRedirecting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const { login, register, loginWithGoogle, isLoading } = useAuth();
   
   // Email Auth States
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
-  
-  useEffect(() => {
-    const handleRedirect = async () => {
-      if (currentUser && lastActiveChatId && !isRedirecting) {
-        setIsRedirecting(true);
-        const lastActiveUser = onlineUsers.find(user => user.id === lastActiveChatId);
-        if (lastActiveUser) {
-          await setSelectedUser(lastActiveUser);
-        }
-        navigate('/chat', { replace: true });
-      } else if (currentUser && !isRedirecting) {
-        setIsRedirecting(true);
-        navigate('/chat', { replace: true });
-      }
-    };
-
-    handleRedirect();
-  }, [currentUser, lastActiveChatId, navigate, onlineUsers, setSelectedUser, isRedirecting]);
+  const [activeTab, setActiveTab] = useState<'email' | 'google'>('email');
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
     try {
-      let user;
       if (isRegistering) {
-        user = await registerWithEmail(email, password, name);
+        await register(name, email, password);
       } else {
-        user = await loginWithEmail(email, password);
+        await login(email, password);
       }
-      setCurrentUser(user);
-      toast({
-        title: "Success",
-        description: isRegistering ? "Account created successfully!" : "Logged in successfully!",
-        className: "bg-green-50 border-green-200"
-      });
+      navigate('/chat');
     } catch (error: any) {
-      toast({
-        title: "Authentication Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+      console.error('Auth error:', error);
     }
   };
 
   const handleGoogleAuth = async () => {
-    setIsLoading(true);
-    
     try {
-      const user = await loginWithGoogle();
-      setCurrentUser(user);
-      toast({
-        title: "Success",
-        description: "Logged in with Google successfully!",
-        className: "bg-green-50 border-green-200"
-      });
+      await loginWithGoogle();
+      navigate('/chat');
     } catch (error: any) {
       console.error('Google login error:', error);
-      toast({
-        title: "Authentication Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
-
-  const handlePasswordReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      await resetPassword(resetEmail);
-      setIsResetDialogOpen(false);
-      toast({
-        title: "Password Reset Email Sent",
-        description: "Check your email for instructions to reset your password",
-        className: "bg-green-50 border-green-200"
-      });
-      setResetEmail('');
-    } catch (error: any) {
-      toast({
-        title: "Password Reset Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isRedirecting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Redirecting...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -155,7 +60,12 @@ const Index = () => {
         <h1 className="text-3xl font-semibold text-center mb-2">Welcome to Chat</h1>
         <p className="text-gray-600 text-center mb-8">Sign in to start chatting with your friends</p>
         
-        <Tabs defaultValue="email" className="space-y-6">
+        <Tabs 
+          defaultValue="email" 
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as 'email' | 'google')}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="email">Email</TabsTrigger>
             <TabsTrigger value="google">Google</TabsTrigger>
@@ -201,50 +111,6 @@ const Index = () => {
                   disabled={isLoading}
                 />
               </div>
-              {!isRegistering && (
-                <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-                  <DialogTrigger asChild>
-                    <button
-                      type="button"
-                      className="text-sm text-gray-600 hover:underline"
-                      disabled={isLoading}
-                    >
-                      Forgot password?
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Reset Password</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handlePasswordReset} className="space-y-4 mt-4">
-                      <InputWithIcon
-                        type="email"
-                        placeholder="Enter your email address"
-                        value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
-                        className="w-full"
-                        icon={<Mail className="w-4 h-4" />}
-                        required
-                        disabled={isLoading}
-                      />
-                      <Button 
-                        type="submit" 
-                        className="w-full"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? (
-                          <div className="flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Sending Reset Link...
-                          </div>
-                        ) : (
-                          'Send Reset Link'
-                        )}
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              )}
               <Button 
                 type="submit" 
                 className="w-full"
