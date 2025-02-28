@@ -92,7 +92,7 @@ const Chat = () => {
         <button
           onClick={() => handleTabChange('chats')}
           className={`flex flex-col items-center p-2 ${
-            activeTab === 'chats' ? 'text-purple-600' : 'text-gray-600'
+            activeTab === 'chats' ? 'text-[#46C8B6]' : 'text-gray-600'
           }`}
         >
           <MessageCircle className="h-6 w-6" />
@@ -101,7 +101,7 @@ const Chat = () => {
         <button
           onClick={() => handleTabChange('profile')}
           className={`flex flex-col items-center p-2 ${
-            activeTab === 'profile' ? 'text-purple-600' : 'text-gray-600'
+            activeTab === 'profile' ? 'text-[#46C8B6]' : 'text-gray-600'
           }`}
         >
           <User className="h-6 w-6" />

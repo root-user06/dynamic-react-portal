@@ -63,7 +63,7 @@ const UserList = ({ onChatSelect }: UserListProps) => {
     });
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-white">
       <div className="p-4 border-b border-border">
         <div className="flex items-center">
           <img 
@@ -96,10 +96,10 @@ const UserList = ({ onChatSelect }: UserListProps) => {
                 className="flex flex-col items-center cursor-pointer"
               >
                 <div className="relative">
-                  <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-lg">
+                  <div className="w-14 h-14 rounded-full bg-[#46C8B6]/10 flex items-center justify-center text-[#46C8B6] text-lg">
                     {user.name ? user.name[0].toUpperCase() : '?'}
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#46C8B6] rounded-full border-2 border-white" />
                 </div>
                 <span className="text-xs mt-1 max-w-[60px] truncate">{user.name}</span>
               </div>
@@ -121,17 +121,17 @@ const UserList = ({ onChatSelect }: UserListProps) => {
               <div
                 key={user.id}
                 onClick={() => handleUserClick(user)}
-                className={`p-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${
-                  selectedUser?.id === user.id ? 'bg-gray-50' : ''
+                className={`p-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-[#46C8B6]/5 ${
+                  selectedUser?.id === user.id ? 'bg-[#46C8B6]/10' : ''
                 }`}
               >
                 <div className="flex items-center space-x-3">
                   <div className="relative">
-                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600">
+                    <div className="w-12 h-12 rounded-full bg-[#46C8B6]/10 flex items-center justify-center text-[#46C8B6]">
                       {user.name ? user.name[0].toUpperCase() : '?'}
                     </div>
                     {user.isOnline && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#46C8B6] rounded-full border-2 border-white" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -158,7 +158,7 @@ const UserList = ({ onChatSelect }: UserListProps) => {
                     )}
                   </div>
                   {unreadCount > 0 && (
-                    <div className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-full bg-[#46C8B6] text-white text-xs flex items-center justify-center">
                       {unreadCount}
                     </div>
                   )}
