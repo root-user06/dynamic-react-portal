@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { ChatState, Message, User } from './types';
 import { persist } from 'zustand/middleware';
@@ -6,10 +7,18 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 const loadUserFromStorage = (): User | null => {
   try {
+    // Try to get user from both localStorage and sessionStorage
+    const localUser = localStorage.getItem('currentUser');
     const sessionUser = sessionStorage.getItem('currentUser');
+    
+    if (localUser) {
+      return JSON.parse(localUser);
+    }
+    
     if (sessionUser) {
       return JSON.parse(sessionUser);
     }
+    
     return null;
   } catch (error) {
     console.error('Error loading user from storage:', error);
@@ -17,12 +26,18 @@ const loadUserFromStorage = (): User | null => {
   }
 };
 
-const saveUserToStorage = (user: User | null) => {
+const saveUserToStorage = (user: User | null, rememberMe: boolean = false) => {
   try {
     if (user) {
+      // Save to both storages for better persistence
       sessionStorage.setItem('currentUser', JSON.stringify(user));
+      
+      if (rememberMe) {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+      }
     } else {
       sessionStorage.removeItem('currentUser');
+      localStorage.removeItem('currentUser');
     }
   } catch (error) {
     console.error('Error saving user to storage:', error);
@@ -31,19 +46,27 @@ const saveUserToStorage = (user: User | null) => {
 
 const loadLastActiveChatId = (): string | null => {
   try {
-    return sessionStorage.getItem('lastActiveChatId');
+    const sessionChatId = sessionStorage.getItem('lastActiveChatId');
+    const localChatId = localStorage.getItem('lastActiveChatId');
+    
+    return sessionChatId || localChatId || null;
   } catch (error) {
     console.error('Error loading last active chat ID:', error);
     return null;
   }
 };
 
-const saveLastActiveChatId = (id: string | null) => {
+const saveLastActiveChatId = (id: string | null, rememberMe: boolean = false) => {
   try {
     if (id) {
       sessionStorage.setItem('lastActiveChatId', id);
+      
+      if (rememberMe) {
+        localStorage.setItem('lastActiveChatId', id);
+      }
     } else {
       sessionStorage.removeItem('lastActiveChatId');
+      localStorage.removeItem('lastActiveChatId');
     }
   } catch (error) {
     console.error('Error saving last active chat ID:', error);
@@ -71,10 +94,14 @@ export const useChatStore = create<ChatState>()(
       messages: [],
       onlineUsers: [],
       lastActiveChatId: loadLastActiveChatId(),
+      rememberMe: false,
+      setRememberMe: (value: boolean) => set({ rememberMe: value }),
       setCurrentUser: async (user: User | null) => {
         try {
+          const rememberMe = get().rememberMe;
+          
           if (user) {
-            saveUserToStorage(user);
+            saveUserToStorage(user, rememberMe);
             const cleanup = await updateUserStatus(user);
             set({ currentUser: user });
 
@@ -118,9 +145,11 @@ export const useChatStore = create<ChatState>()(
         }
       },
       setSelectedUser: (user: User | null) => {
+        const rememberMe = get().rememberMe;
+        
         set((state) => {
           if (user && user.id !== state.currentUser?.id) {
-            saveLastActiveChatId(user.id);
+            saveLastActiveChatId(user.id, rememberMe);
             
             // Mark messages as read immediately
             const updatedMessages = state.messages.map(msg => {
@@ -140,7 +169,7 @@ export const useChatStore = create<ChatState>()(
             };
           }
           
-          saveLastActiveChatId(null);
+          saveLastActiveChatId(null, rememberMe);
           return { 
             selectedUser: user,
             lastActiveChatId: null
@@ -176,22 +205,60 @@ export const useChatStore = create<ChatState>()(
         }
       },
       updateOnlineUsers: (users: User[]) => set({ onlineUsers: users }),
+      checkSession: () => {
+        const user = loadUserFromStorage();
+        if (user) {
+          get().setCurrentUser(user);
+          return true;
+        }
+        return false;
+      },
+      logout: () => {
+        cleanupSubscriptions();
+        saveUserToStorage(null);
+        set({ 
+          currentUser: null, 
+          selectedUser: null, 
+          messages: [], 
+          onlineUsers: [],
+          lastActiveChatId: null,
+          rememberMe: false
+        });
+      }
     }),
     {
       name: 'chat-store',
       partialize: (state) => ({
         currentUser: state.currentUser,
         lastActiveChatId: state.lastActiveChatId,
+        rememberMe: state.rememberMe
       }),
       storage: {
         getItem: (name) => {
-          const str = sessionStorage.getItem(name);
-          return str ? JSON.parse(str) : null;
+          // Try to get from sessionStorage first, then localStorage
+          const sessionValue = sessionStorage.getItem(name);
+          if (sessionValue) return JSON.parse(sessionValue);
+          
+          const localValue = localStorage.getItem(name);
+          return localValue ? JSON.parse(localValue) : null;
         },
         setItem: (name, value) => {
-          sessionStorage.setItem(name, JSON.stringify(value));
+          const { rememberMe } = JSON.parse(value);
+          
+          // Always save to sessionStorage
+          sessionStorage.setItem(name, value);
+          
+          // Save to localStorage only if rememberMe is true
+          if (rememberMe) {
+            localStorage.setItem(name, value);
+          } else {
+            localStorage.removeItem(name);
+          }
         },
-        removeItem: (name) => sessionStorage.removeItem(name),
+        removeItem: (name) => {
+          sessionStorage.removeItem(name);
+          localStorage.removeItem(name);
+        },
       },
     }
   )
@@ -204,6 +271,10 @@ if (typeof window !== 'undefined') {
       useChatStore.getState().setCurrentUser(null);
     }
   });
+  
+  // Check session on load
+  const hasSession = useChatStore.getState().checkSession();
+  console.log("User session found:", hasSession);
 }
 
 // Cleanup subscriptions on window unload

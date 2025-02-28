@@ -4,15 +4,15 @@ export interface User {
   name: string;
   email?: string;
   photoURL?: string;
-  isOnline: boolean;
-  lastSeen: string;
+  isOnline?: boolean;
+  lastSeen?: string;
 }
 
 export interface Message {
   id: string;
-  content: string;
   senderId: string;
   receiverId: string;
+  content: string;
   timestamp: string;
   isRead: boolean;
 }
@@ -23,8 +23,12 @@ export interface ChatState {
   messages: Message[];
   onlineUsers: User[];
   lastActiveChatId: string | null;
-  setCurrentUser: (user: User | null) => Promise<void>;
+  rememberMe: boolean;
+  setRememberMe: (value: boolean) => void;
+  setCurrentUser: (user: User | null) => void;
   setSelectedUser: (user: User | null) => void;
   addMessage: (message: Message) => Promise<void>;
   updateOnlineUsers: (users: User[]) => void;
+  checkSession: () => boolean;
+  logout: () => void;
 }

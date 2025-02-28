@@ -4,13 +4,15 @@ import UserList from '@/components/UserList';
 import ChatWindow from '@/components/ChatWindow';
 import UserProfile from '@/components/UserProfile';
 import { useChatStore } from '@/lib/store';
-import { updateUserStatus } from '@/lib/firebase';
+import { updateUserStatus, logoutUser } from '@/lib/firebase';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User, MessageCircle } from 'lucide-react';
+import { User, MessageCircle, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 
 const Chat = () => {
-  const { currentUser, selectedUser, setSelectedUser } = useChatStore();
+  const { currentUser, selectedUser, setSelectedUser, logout } = useChatStore();
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'chats' | 'profile'>('chats');
@@ -73,9 +75,38 @@ const Chat = () => {
   }
 
   if (!currentUser) {
-    navigate('/auth/login');
+    navigate('/');
     return null;
   }
+
+  const handleLogout = async () => {
+    try {
+      if (currentUser) {
+        await updateUserStatus({
+          ...currentUser,
+          isOnline: false,
+          lastSeen: new Date().toISOString()
+        });
+      }
+      
+      await logoutUser();
+      logout();
+      
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+      
+      navigate('/');
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Error",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleTabChange = (tab: 'chats' | 'profile') => {
     setActiveTab(tab);
@@ -92,7 +123,7 @@ const Chat = () => {
         <button
           onClick={() => handleTabChange('chats')}
           className={`flex flex-col items-center p-2 ${
-            activeTab === 'chats' ? 'text-purple-600' : 'text-gray-600'
+            activeTab === 'chats' ? 'text-[#46C8B6]' : 'text-gray-600'
           }`}
         >
           <MessageCircle className="h-6 w-6" />
@@ -101,7 +132,7 @@ const Chat = () => {
         <button
           onClick={() => handleTabChange('profile')}
           className={`flex flex-col items-center p-2 ${
-            activeTab === 'profile' ? 'text-purple-600' : 'text-gray-600'
+            activeTab === 'profile' ? 'text-[#46C8B6]' : 'text-gray-600'
           }`}
         >
           <User className="h-6 w-6" />
@@ -124,6 +155,18 @@ const Chat = () => {
           />
         ) : location.pathname === '/chat/profile' ? (
           <div className="flex-1 overflow-hidden pb-16">
+            <div className="p-4 flex justify-between items-center border-b border-gray-200">
+              <h1 className="text-xl font-semibold">Profile</h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-red-500"
+              >
+                <LogOut className="h-5 w-5 mr-1" />
+                <span>Logout</span>
+              </Button>
+            </div>
             <UserProfile 
               user={currentUser} 
               showBackButton={true}
@@ -152,9 +195,35 @@ const Chat = () => {
         <div className="flex-1 relative">
           <ChatWindow />
         </div>
-        {selectedUser && (
+        {selectedUser ? (
           <div className="w-80 border-l border-gray-200">
             <UserProfile user={selectedUser} />
+          </div>
+        ) : (
+          <div className="w-80 border-l border-gray-200">
+            <div className="p-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold">Your Profile</h2>
+            </div>
+            <div className="p-4">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-16 h-16 rounded-full bg-[#46C8B6]/10 flex items-center justify-center text-[#46C8B6] text-xl">
+                  {currentUser.name && currentUser.name[0].toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">{currentUser.name}</h3>
+                  <p className="text-sm text-gray-600">{currentUser.email || "No email added"}</p>
+                </div>
+              </div>
+              
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="w-full mt-4 border-red-500 text-red-500 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </div>
         )}
       </div>
