@@ -1,13 +1,11 @@
-
 import { User } from '@/lib/types';
 import { Button } from './ui/button';
 import { ChevronLeft, LogOut } from 'lucide-react';
 import { Input } from './ui/input';
 import { useState } from 'react';
 import { useChatStore } from '@/lib/store';
-import { updateUserStatus } from '@/lib/firebase';
+import { updateUserStatus, logoutUser } from '@/lib/firebase';
 import { toast } from './ui/use-toast';
-import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 interface UserProfileProps {
@@ -17,12 +15,11 @@ interface UserProfileProps {
 }
 
 const UserProfile = ({ user, showBackButton, onBack }: UserProfileProps) => {
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user.name);
   const { setCurrentUser, currentUser } = useChatStore();
   const isOwnProfile = currentUser?.id === user.id;
-  const { logout } = useAuth();
-  const navigate = useNavigate();
 
   const handleSave = async () => {
     try {
@@ -47,9 +44,42 @@ const UserProfile = ({ user, showBackButton, onBack }: UserProfileProps) => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      if (currentUser) {
+        // Set user status to offline before logout
+        const offlineUser = {
+          ...currentUser,
+          isOnline: false,
+          lastSeen: new Date().toISOString()
+        };
+        await updateUserStatus(offlineUser);
+      }
+      
+      await logoutUser();
+      // Clear user from store
+      setCurrentUser(null);
+      // Clear cookies and session storage
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      sessionStorage.clear();
+      // Redirect to landing page
+      navigate('/', { replace: true });
+      toast({
+        title: "Success",
+        description: "Logged out successfully!",
+        className: "bg-green-50 border-green-200"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -112,13 +142,13 @@ const UserProfile = ({ user, showBackButton, onBack }: UserProfileProps) => {
                 Edit Profile
               </Button>
             )}
-            
-            {/* Logout button */}
+
+            {/* Logout Button */}
             <Button 
-              className="w-full bg-red-600 hover:bg-red-700 text-white mt-4 flex items-center justify-center gap-2"
+              className="w-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center gap-2" 
               onClick={handleLogout}
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-5 w-5" />
               Logout
             </Button>
 

@@ -10,7 +10,8 @@ import {
   signInWithPhoneNumber,
   updateProfile,
   sendPasswordResetEmail,
-  AuthError
+  AuthError,
+  signOut
 } from 'firebase/auth';
 import { Message, User } from './types';
 
@@ -173,13 +174,14 @@ export const updateMessageReadStatus = async (messageId: string, isRead: boolean
   await update(messageRef, { isRead });
 };
 
-export const subscribeToMessages = (callback: (messages: Message[]) => void) => {
+export const subscribeToMessages = (callback: (messages: Message[]) => void): () => void => {
   const messagesRef = ref(database, 'messages');
-  onValue(messagesRef, (snapshot) => {
+  const unsubscribe = onValue(messagesRef, (snapshot) => {
     const data = snapshot.val();
     const messages: Message[] = data ? Object.values(data) : [];
     callback(messages);
   });
+  return () => unsubscribe();
 };
 
 // User Operations
@@ -265,13 +267,14 @@ export const updateUserStatus = async (user: User) => {
   };
 };
 
-export const subscribeToUsers = (callback: (users: User[]) => void) => {
+export const subscribeToUsers = (callback: (users: User[]) => void): () => void => {
   const usersRef = ref(database, 'users');
-  onValue(usersRef, (snapshot) => {
+  const unsubscribe = onValue(usersRef, (snapshot) => {
     const data = snapshot.val();
     const users: User[] = data ? Object.values(data) : [];
     callback(users);
   });
+  return () => unsubscribe();
 };
 
 export const resetPassword = async (email: string) => {
@@ -279,6 +282,15 @@ export const resetPassword = async (email: string) => {
     await sendPasswordResetEmail(auth, email);
   } catch (error: any) {
     throw new Error(formatAuthError(error));
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    await signOut(auth);
+    return true;
+  } catch (error: any) {
+    throw new Error('Failed to logout. Please try again.');
   }
 };
 

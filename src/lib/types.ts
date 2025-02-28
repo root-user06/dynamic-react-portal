@@ -1,18 +1,17 @@
-
 export interface User {
   id: string;
   name: string;
+  email?: string;
+  photoURL?: string;
   isOnline: boolean;
   lastSeen: string;
-  email?: string; // Optional for future authentication
-  photoURL?: string; // Optional for future profile photos
 }
 
 export interface Message {
   id: string;
+  content: string;
   senderId: string;
   receiverId: string;
-  content: string;
   timestamp: string;
   isRead: boolean;
 }
@@ -23,8 +22,8 @@ export interface ChatState {
   messages: Message[];
   onlineUsers: User[];
   lastActiveChatId: string | null;
-  setCurrentUser: (user: User) => void;
+  setCurrentUser: (user: User | null) => Promise<void>;
   setSelectedUser: (user: User | null) => void;
-  addMessage: (message: Message) => void;
+  addMessage: (message: Message) => Promise<void>;
   updateOnlineUsers: (users: User[]) => void;
 }

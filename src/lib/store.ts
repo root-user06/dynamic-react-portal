@@ -1,70 +1,117 @@
-
 import { create } from 'zustand';
 import { ChatState, Message, User } from './types';
 import { persist } from 'zustand/middleware';
 import { sendMessage, updateUserStatus, subscribeToMessages, subscribeToUsers, updateMessageReadStatus } from './firebase';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 const loadUserFromStorage = (): User | null => {
-  const sessionUser = sessionStorage.getItem('currentUser');
-  if (sessionUser) {
-    return JSON.parse(sessionUser);
+  try {
+    const sessionUser = sessionStorage.getItem('currentUser');
+    if (sessionUser) {
+      return JSON.parse(sessionUser);
+    }
+    return null;
+  } catch (error) {
+    console.error('Error loading user from storage:', error);
+    return null;
   }
-
-  const cookieUser = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('currentUser='));
-  
-  if (cookieUser) {
-    return JSON.parse(decodeURIComponent(cookieUser.split('=')[1]));
-  }
-
-  return null;
 };
 
 const saveUserToStorage = (user: User | null) => {
-  if (user) {
-    sessionStorage.setItem('currentUser', JSON.stringify(user));
-    const date = new Date();
-    date.setTime(date.getTime() + (7 * 24 * 60 * 60 * 1000));
-    document.cookie = `currentUser=${encodeURIComponent(JSON.stringify(user))}; expires=${date.toUTCString()}; path=/`;
-  } else {
-    sessionStorage.removeItem('currentUser');
-    document.cookie = 'currentUser=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  try {
+    if (user) {
+      sessionStorage.setItem('currentUser', JSON.stringify(user));
+    } else {
+      sessionStorage.removeItem('currentUser');
+    }
+  } catch (error) {
+    console.error('Error saving user to storage:', error);
   }
 };
 
 const loadLastActiveChatId = (): string | null => {
-  return localStorage.getItem('lastActiveChatId');
+  try {
+    return sessionStorage.getItem('lastActiveChatId');
+  } catch (error) {
+    console.error('Error loading last active chat ID:', error);
+    return null;
+  }
 };
 
-const saveLastActiveChatId = (chatId: string | null) => {
-  if (chatId) {
-    localStorage.setItem('lastActiveChatId', chatId);
-  } else {
-    localStorage.removeItem('lastActiveChatId');
+const saveLastActiveChatId = (id: string | null) => {
+  try {
+    if (id) {
+      sessionStorage.setItem('lastActiveChatId', id);
+    } else {
+      sessionStorage.removeItem('lastActiveChatId');
+    }
+  } catch (error) {
+    console.error('Error saving last active chat ID:', error);
   }
+};
+
+// Initialize auth state listener
+const auth = getAuth();
+let authUnsubscribe: (() => void) | null = null;
+let messagesUnsubscribe: (() => void) | null = null;
+let usersUnsubscribe: (() => void) | null = null;
+
+// Cleanup function for all subscriptions
+const cleanupSubscriptions = () => {
+  if (authUnsubscribe) authUnsubscribe();
+  if (messagesUnsubscribe) messagesUnsubscribe();
+  if (usersUnsubscribe) usersUnsubscribe();
 };
 
 export const useChatStore = create<ChatState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       currentUser: loadUserFromStorage(),
       selectedUser: null,
       messages: [],
       onlineUsers: [],
       lastActiveChatId: loadLastActiveChatId(),
-      setCurrentUser: async (user: User) => {
+      setCurrentUser: async (user: User | null) => {
         try {
-          saveUserToStorage(user);
-          const cleanup = await updateUserStatus(user);
-          set({ currentUser: user });
-          
-          // Handle cleanup when component unmounts
-          window.addEventListener('beforeunload', cleanup);
-          return () => {
-            cleanup();
-            window.removeEventListener('beforeunload', cleanup);
-          };
+          if (user) {
+            saveUserToStorage(user);
+            const cleanup = await updateUserStatus(user);
+            set({ currentUser: user });
+
+            // Setup real-time subscriptions when user logs in
+            if (typeof window !== 'undefined') {
+              // Cleanup any existing subscriptions
+              if (messagesUnsubscribe) messagesUnsubscribe();
+              if (usersUnsubscribe) usersUnsubscribe();
+
+              // Setup new subscriptions
+              messagesUnsubscribe = subscribeToMessages((messages) => {
+                set({ messages });
+              });
+
+              usersUnsubscribe = subscribeToUsers((users) => {
+                set({ onlineUsers: users });
+              });
+
+              // Handle cleanup when window closes
+              const handleUnload = () => {
+                cleanup();
+                cleanupSubscriptions();
+              };
+              window.addEventListener('beforeunload', handleUnload);
+            }
+          } else {
+            // Cleanup on logout
+            cleanupSubscriptions();
+            saveUserToStorage(null);
+            set({ 
+              currentUser: null, 
+              selectedUser: null, 
+              messages: [], 
+              onlineUsers: [],
+              lastActiveChatId: null 
+            });
+          }
         } catch (error) {
           console.error('Error updating user status:', error);
           set({ currentUser: user });
@@ -80,9 +127,7 @@ export const useChatStore = create<ChatState>()(
               if (msg.senderId === user.id && 
                   msg.receiverId === state.currentUser?.id && 
                   !msg.isRead) {
-                // Update read status in Firebase
-                updateMessageReadStatus(msg.id, true)
-                  .catch(console.error);
+                updateMessageReadStatus(msg.id, true).catch(console.error);
                 return { ...msg, isRead: true };
               }
               return msg;
@@ -123,26 +168,45 @@ export const useChatStore = create<ChatState>()(
           await sendMessage(message);
         } catch (error) {
           console.error('Error sending message:', error);
+          // Remove the message from state if sending failed
+          set((state) => ({
+            messages: state.messages.filter(m => m.id !== message.id)
+          }));
+          throw error;
         }
       },
       updateOnlineUsers: (users: User[]) => set({ onlineUsers: users }),
     }),
     {
-      name: 'chat-storage',
-      partialize: (state) => ({ 
-        messages: state.messages
+      name: 'chat-store',
+      partialize: (state) => ({
+        currentUser: state.currentUser,
+        lastActiveChatId: state.lastActiveChatId,
       }),
+      storage: {
+        getItem: (name) => {
+          const str = sessionStorage.getItem(name);
+          return str ? JSON.parse(str) : null;
+        },
+        setItem: (name, value) => {
+          sessionStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: (name) => sessionStorage.removeItem(name),
+      },
     }
   )
 );
 
-// Subscribe to real-time updates
+// Initialize auth state listener
 if (typeof window !== 'undefined') {
-  subscribeToMessages((messages) => {
-    useChatStore.setState({ messages });
+  authUnsubscribe = onAuthStateChanged(auth, (user) => {
+    if (!user && useChatStore.getState().currentUser) {
+      useChatStore.getState().setCurrentUser(null);
+    }
   });
+}
 
-  subscribeToUsers((users) => {
-    useChatStore.setState({ onlineUsers: users });
-  });
+// Cleanup subscriptions on window unload
+if (typeof window !== 'undefined') {
+  window.addEventListener('unload', cleanupSubscriptions);
 }

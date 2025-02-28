@@ -1,84 +1,69 @@
+# Welcome to your Lovable project
 
+## Project info
 
-###
-<div style="text-align: center;">
-  <img src="./public/Logo.svg" height="100" width="100">
-</div>
+**URL**: https://lovable.dev/projects/44108e95-1159-4358-bc38-f5ff8b5485cb
 
-###
-```yaml
+## How can I edit this code?
 
-   # 🚀 Santosh Poudel | Web Developer & Graphic Designer
+There are several ways of editing your application.
 
- Hi there! 👋 I'm Santosh Poudel, a passionate **Frontend Developer** and **Graphic Designer**
- dedicated to crafting immersive user experiences and visually captivating designs. My expertise
- lies in **React, HTML, CSS, JavaScript**, and more! Explore my work at **(https://santoshpoudel06.com.np)**.
+**Use Lovable**
 
- ## ✨ Meet Me Through JavaScript
+Simply visit the [Lovable Project](https://lovable.dev/projects/44108e95-1159-4358-bc38-f5ff8b5485cb) and start prompting.
 
- const santosh= (() => {
-  return {
-    name: "Santosh Poudel",
-    title: "Frontend Developer & Graphic Designer",
-    skills: ["React", "Next.js", "HTML", "CSS", "JavaScript", "Figma", "Photoshop"],
-    website: "https://santoshpoudel06.com.np",
-    introduce: function() {
-      console.log(`Hey there! I'm ${this.name}, a ${this.title} who loves turning ideas into reality. 🚀`);
-    }
-  };
-})();
+Changes made via Lovable will be committed automatically to this repo.
 
-santosh.introduce();
+**Use your preferred IDE**
 
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+Follow these steps:
+
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
+
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
+
+# Step 3: Install the necessary dependencies.
+npm i
+
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
 ```
-###
 
-<div align="center">
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" height="30" alt="javascript logo"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" height="30" alt="typescript logo"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" height="30" alt="react logo"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg" height="30" alt="html5 logo"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg" height="30" alt="css3 logo"  />
-  <img width="12" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" height="30" alt="python logo"  />
-  <img width="12" />
-</div>
+**Edit a file directly in GitHub**
 
-###
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
 
-<picture>
-  <source
-    media="(prefers-color-scheme: dark)"
-    srcset="https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake-dark.svg"
-  />
-  <source
-    media="(prefers-color-scheme: light)"
-    srcset="https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake.svg"
-  />
-  <img
-    alt="github contribution grid snake animation"
-    src="https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake.svg"
-  />
-</picture>
+**Use GitHub Codespaces**
 
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## What technologies are used for this project?
 
-## 🎯 **Let’s Explore **
+This project is built with .
 
-Feel free to reach out for **freelance projects**, **collaborations**, or just to chat about design and development! Let’s make something amazing together. 💥
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
 
-- 🌐 **Website**: [santoshpoudel06.com.np](https://santoshpoudel06.com.np)
-- 📧 **Email**: info@santoshpoudel06.com.np
+## How can I deploy this project?
 
+Simply open [Lovable](https://lovable.dev/projects/44108e95-1159-4358-bc38-f5ff8b5485cb) and click on Share -> Publish.
 
----
+## I want to use a custom domain - is that possible?
 
-<br>
-<h3 align ="center">
-🎉 Thank You for Checking Out the Project!
-If you enjoy this project, feel free to ⭐️ it and share it with others!
-</h3>
+We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)

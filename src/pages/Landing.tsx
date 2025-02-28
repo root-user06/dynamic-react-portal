@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,6 +21,7 @@ const Landing: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isRegistering, setIsRegistering] = useState(false);
   
   // Function to navigate to auth pages
   const goToCreateAccount = () => navigate('/auth/register');
@@ -60,8 +60,14 @@ const Landing: React.FC = () => {
     }
   }, [visibleMessages]);
 
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const isRegisteringParam = queryParams.get('register');
+    setIsRegistering(isRegisteringParam === 'true');
+  }, [location.search]);
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#1A5E63] text-white overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-white text-black overflow-hidden">
       {/* Logo Section */}
       <div className="flex-1 flex flex-col items-center justify-between">
         {/* App Logo - just logo with no text */}
@@ -87,10 +93,13 @@ const Landing: React.FC = () => {
                     key={`${message.id}-${index}`}
                     initial={{ opacity: 0, y: 20, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ 
-                      opacity: 0, 
+                    exit={index === 0 ? { 
+                      opacity: 0,
                       y: -50,
                       transition: { duration: 0.3, ease: "easeInOut" }
+                    } : {
+                      opacity: 0,
+                      transition: { duration: 0.2 }
                     }}
                     transition={{ 
                       duration: 0.5,
@@ -117,7 +126,6 @@ const Landing: React.FC = () => {
             </div>
           </div>
         </div>
-        
         {/* Action Buttons - moved to bottom of flex container */}
         <div className="w-full px-6 pb-10 space-y-3">
           <Button 
