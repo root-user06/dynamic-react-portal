@@ -3,13 +3,14 @@ import { createBrowserRouter } from 'react-router-dom';
 import Chat from './pages/Chat';
 import Index from './pages/Index';
 import NotFound from './pages/NotFound';
+import Landing from './pages/Landing';
 import Login from './pages/login';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Index />,
+    element: <Landing />,
   },
   {
     path: '/auth/register',
