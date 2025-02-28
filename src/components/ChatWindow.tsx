@@ -59,7 +59,7 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
 
   if (!selectedUser || !currentUser) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#FAFAFA]">
+      <div className="flex-1 flex items-center justify-center bg-gray-50">
         <p className="text-gray-500">Select a chat to start messaging</p>
       </div>
     );
@@ -71,9 +71,9 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
   );
 
   return (
-    <div className="flex flex-col h-full bg-[#FAFAFA]">
+    <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -82,17 +82,17 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
                   variant="ghost"
                   size="icon"
                   onClick={onBack}
-                  className="md:hidden -ml-2 text-[#46C8B6]"
+                  className="md:hidden -ml-2"
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
               )}
               <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-[#46C8B6]/10 flex items-center justify-center text-[#46C8B6]">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                   {selectedUser.name && selectedUser.name[0].toUpperCase()}
                 </div>
                 {selectedUser.isOnline && (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#46C8B6] rounded-full border-2 border-white" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
                 )}
               </div>
               <div>
@@ -103,10 +103,10 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="icon" className="text-[#46C8B6]">
+              <Button variant="ghost" size="icon" className="text-purple-600">
                 <Phone className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-[#46C8B6]">
+              <Button variant="ghost" size="icon" className="text-purple-600">
                 <Video className="h-5 w-5" />
               </Button>
               <Button variant="ghost" size="icon" className="text-gray-600">
@@ -120,7 +120,7 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
       {/* Messages */}
       <div 
         ref={messageContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F7F7FA]"
+        className="flex-1 overflow-y-auto p-4 space-y-4"
       >
         <AnimatePresence initial={false}>
           {filteredMessages.length > 0 ? (
@@ -134,25 +134,24 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
                   key={message.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
+                  exit={{ opacity: 0 }}
                   className={`flex ${isSender ? 'justify-end' : 'justify-start'}`}
                 >
                   <div className={`flex items-end space-x-2 max-w-[70%] ${isSender ? 'flex-row-reverse space-x-reverse' : ''}`}>
                     {showAvatar && !isSender && (
                       <div className="flex-shrink-0 mb-2">
-                        <div className="w-8 h-8 rounded-full bg-[#46C8B6]/10 flex items-center justify-center text-sm text-[#46C8B6]">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">
                           {selectedUser.name && selectedUser.name[0].toUpperCase()}
                         </div>
                       </div>
                     )}
                     <div className={`group relative rounded-2xl px-4 py-2 ${
                       isSender
-                        ? 'bg-[#E5DEFF] text-gray-800 rounded-br-none'
-                        : 'bg-white border border-gray-100 text-gray-800 rounded-bl-none shadow-sm'
+                        ? 'bg-purple-600 text-white rounded-br-none'
+                        : 'bg-white text-gray-900 rounded-bl-none shadow-sm'
                     }`}>
                       <p className="break-words text-sm">{message.content}</p>
-                      <div className={`text-[10px] ${isSender ? 'text-gray-600' : 'text-gray-500'} mt-1`}>
+                      <div className={`text-[10px] ${isSender ? 'text-purple-200' : 'text-gray-500'} mt-1`}>
                         {new Date(message.timestamp).toLocaleTimeString([], { 
                           hour: '2-digit', 
                           minute: '2-digit' 
@@ -180,13 +179,13 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Message..."
-            className="flex-1 bg-[#F7F7FA] border-gray-200"
+            className="flex-1 bg-gray-50"
           />
           <Button 
             type="submit" 
             size="icon"
             disabled={!newMessage.trim()}
-            className="bg-[#46C8B6] hover:bg-[#38a596] text-white rounded-full w-10 h-10 flex items-center justify-center"
+            className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-10 h-10 flex items-center justify-center"
           >
             <Send className="w-5 h-5" />
           </Button>
