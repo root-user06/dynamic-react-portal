@@ -19,6 +19,12 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
+  // Debug information
+  useEffect(() => {
+    console.log("Current user in chat window:", currentUser);
+    console.log("Selected user in chat window:", selectedUser);
+  }, [currentUser, selectedUser]);
+
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -83,7 +89,7 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
               )}
               <div className="relative">
                 <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                  {selectedUser.name[0].toUpperCase()}
+                  {selectedUser.name && selectedUser.name[0].toUpperCase()}
                 </div>
                 {selectedUser.isOnline && (
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
@@ -117,44 +123,50 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
         className="flex-1 overflow-y-auto p-4 space-y-4"
       >
         <AnimatePresence initial={false}>
-          {filteredMessages.map((message, index) => {
-            const isSender = message.senderId === currentUser.id;
-            const showAvatar = index === 0 || 
-                             filteredMessages[index - 1].senderId !== message.senderId;
-            
-            return (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className={`flex ${isSender ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`flex items-end space-x-2 max-w-[70%] ${isSender ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                  {showAvatar && !isSender && (
-                    <div className="flex-shrink-0 mb-2">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">
-                        {selectedUser.name[0].toUpperCase()}
+          {filteredMessages.length > 0 ? (
+            filteredMessages.map((message, index) => {
+              const isSender = message.senderId === currentUser.id;
+              const showAvatar = index === 0 || 
+                              filteredMessages[index - 1].senderId !== message.senderId;
+              
+              return (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className={`flex ${isSender ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`flex items-end space-x-2 max-w-[70%] ${isSender ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                    {showAvatar && !isSender && (
+                      <div className="flex-shrink-0 mb-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">
+                          {selectedUser.name && selectedUser.name[0].toUpperCase()}
+                        </div>
+                      </div>
+                    )}
+                    <div className={`group relative rounded-2xl px-4 py-2 ${
+                      isSender
+                        ? 'bg-purple-600 text-white rounded-br-none'
+                        : 'bg-white text-gray-900 rounded-bl-none shadow-sm'
+                    }`}>
+                      <p className="break-words text-sm">{message.content}</p>
+                      <div className={`text-[10px] ${isSender ? 'text-purple-200' : 'text-gray-500'} mt-1`}>
+                        {new Date(message.timestamp).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
                       </div>
                     </div>
-                  )}
-                  <div className={`group relative rounded-2xl px-4 py-2 ${
-                    isSender
-                      ? 'bg-purple-600 text-white rounded-br-none'
-                      : 'bg-white text-gray-900 rounded-bl-none shadow-sm'
-                  }`}>
-                    <p className="break-words text-sm">{message.content}</p>
-                    <div className={`text-[10px] ${isSender ? 'text-purple-200' : 'text-gray-500'} mt-1`}>
-                      {new Date(message.timestamp).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </div>
                   </div>
-                </div>
-              </motion.div>
-            );
-          })}
+                </motion.div>
+              );
+            })
+          ) : (
+            <div className="flex items-center justify-center h-full mt-8">
+              <p className="text-gray-500">No messages yet. Say hello!</p>
+            </div>
+          )}
         </AnimatePresence>
         <div ref={messagesEndRef} />
       </div>

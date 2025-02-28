@@ -17,6 +17,12 @@ const Chat = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Debug info
+  useEffect(() => {
+    console.log("Current user in Chat page:", currentUser);
+    console.log("Selected user in Chat page:", selectedUser);
+  }, [currentUser, selectedUser]);
+
   // Simulate loading state
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -66,6 +72,11 @@ const Chat = () => {
     return <LoadingSkeleton />;
   }
 
+  if (!currentUser) {
+    navigate('/auth/login');
+    return null;
+  }
+
   const handleTabChange = (tab: 'chats' | 'profile') => {
     setActiveTab(tab);
     if (tab === 'profile') {
@@ -74,10 +85,6 @@ const Chat = () => {
       navigate('/chat');
     }
   };
-
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
 
   const renderBottomNavigation = () => (
     <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white">
@@ -118,7 +125,7 @@ const Chat = () => {
         ) : location.pathname === '/chat/profile' ? (
           <div className="flex-1 overflow-hidden pb-16">
             <UserProfile 
-              user={currentUser!} 
+              user={currentUser} 
               showBackButton={true}
               onBack={() => navigate('/chat')}
             />

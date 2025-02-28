@@ -295,3 +295,45 @@ export const logoutUser = async () => {
 };
 
 export { database };
+
+// Initialize some demo users
+const initializeDemoUsers = async () => {
+  const demoUsers = [
+    {
+      id: "user1",
+      name: "John Doe",
+      email: "john@example.com",
+      isOnline: true,
+      lastSeen: new Date().toISOString()
+    },
+    {
+      id: "user2",
+      name: "Jane Smith",
+      email: "jane@example.com",
+      isOnline: true,
+      lastSeen: new Date().toISOString()
+    },
+    {
+      id: "user3",
+      name: "Bob Johnson",
+      email: "bob@example.com",
+      isOnline: false,
+      lastSeen: new Date().toISOString()
+    }
+  ];
+
+  const usersRef = ref(database, 'users');
+  
+  // Check if users already exist
+  onValue(usersRef, (snapshot) => {
+    if (!snapshot.exists() || Object.keys(snapshot.val()).length < 3) {
+      // Add demo users only if there are fewer than 3 users
+      demoUsers.forEach(user => {
+        set(ref(database, `users/${user.id}`), user);
+      });
+    }
+  }, { onlyOnce: true });
+};
+
+// Call the function to initialize users when the app starts
+initializeDemoUsers();
