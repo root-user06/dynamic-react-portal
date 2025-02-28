@@ -59,7 +59,7 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
 
   if (!selectedUser || !currentUser) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white">
+      <div className="flex-1 flex items-center justify-center bg-[#FAFAFA]">
         <p className="text-gray-500">Select a chat to start messaging</p>
       </div>
     );
@@ -71,9 +71,9 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
   );
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-[#FAFAFA]">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -120,7 +120,7 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
       {/* Messages */}
       <div 
         ref={messageContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 bg-white"
+        className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F7F7FA]"
       >
         <AnimatePresence initial={false}>
           {filteredMessages.length > 0 ? (
@@ -134,7 +134,8 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
                   key={message.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
                   className={`flex ${isSender ? 'justify-end' : 'justify-start'}`}
                 >
                   <div className={`flex items-end space-x-2 max-w-[70%] ${isSender ? 'flex-row-reverse space-x-reverse' : ''}`}>
@@ -147,11 +148,11 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
                     )}
                     <div className={`group relative rounded-2xl px-4 py-2 ${
                       isSender
-                        ? 'bg-[#46C8B6] text-black rounded-br-none'
-                        : 'bg-[#F1F0FB] text-gray-900 rounded-bl-none shadow-sm'
+                        ? 'bg-[#E5DEFF] text-gray-800 rounded-br-none'
+                        : 'bg-white border border-gray-100 text-gray-800 rounded-bl-none shadow-sm'
                     }`}>
                       <p className="break-words text-sm">{message.content}</p>
-                      <div className={`text-[10px] ${isSender ? 'text-black/70' : 'text-gray-500'} mt-1`}>
+                      <div className={`text-[10px] ${isSender ? 'text-gray-600' : 'text-gray-500'} mt-1`}>
                         {new Date(message.timestamp).toLocaleTimeString([], { 
                           hour: '2-digit', 
                           minute: '2-digit' 
@@ -179,13 +180,13 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Message..."
-            className="flex-1 bg-gray-50"
+            className="flex-1 bg-[#F7F7FA] border-gray-200"
           />
           <Button 
             type="submit" 
             size="icon"
             disabled={!newMessage.trim()}
-            className="bg-[#46C8B6] hover:bg-[#38a596] text-black rounded-full w-10 h-10 flex items-center justify-center"
+            className="bg-[#46C8B6] hover:bg-[#38a596] text-white rounded-full w-10 h-10 flex items-center justify-center"
           >
             <Send className="w-5 h-5" />
           </Button>

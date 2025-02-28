@@ -87,7 +87,7 @@ const Chat = () => {
   };
 
   const renderBottomNavigation = () => (
-    <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white">
+    <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white shadow-lg">
       <div className="flex items-center justify-around py-2">
         <button
           onClick={() => handleTabChange('chats')}
@@ -113,7 +113,7 @@ const Chat = () => {
 
   if (isMobile) {
     return (
-      <div className="h-screen bg-white flex flex-col">
+      <div className="h-screen bg-[#FAFAFA] flex flex-col">
         {selectedUser ? (
           <ChatWindow 
             showBackButton={true} 
@@ -144,16 +144,16 @@ const Chat = () => {
   }
 
   return (
-    <div className="h-screen bg-white relative overflow-hidden">
+    <div className="h-screen bg-[#FAFAFA] relative overflow-hidden">
       <div className="flex h-full">
-        <div className="w-80 border-r border-gray-200">
+        <div className="w-80 border-r border-gray-200 bg-white">
           <UserList onChatSelect={setSelectedUser} />
         </div>
         <div className="flex-1 relative">
           <ChatWindow />
         </div>
         {selectedUser && (
-          <div className="w-80 border-l border-gray-200">
+          <div className="w-80 border-l border-gray-200 bg-white">
             <UserProfile user={selectedUser} />
           </div>
         )}
