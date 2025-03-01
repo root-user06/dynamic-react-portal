@@ -246,6 +246,11 @@ const Index = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Footer */}
+      <div className="p-4 text-center text-gray-500 text-sm">
+        <p>© {new Date().getFullYear()} PoudelX Chat. All rights reserved.</p>
+      </div>
     </div>
   );
 };

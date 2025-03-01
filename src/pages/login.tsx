@@ -197,7 +197,7 @@ const Login = () => {
                     Don't have an account?{' '}
                     <button
                       type="button"
-                      onClick={() => navigate('/auth/register')}
+                      onClick={() => navigate('/')}
                       className="text-[#46C8B6] font-semibold hover:underline"
                       disabled={isLoading}
                     >
@@ -267,7 +267,7 @@ const Login = () => {
 
       {/* Footer */}
       <div className="p-4 text-center text-gray-500 text-sm">
-        <p>© {new Date().getFullYear()} PoudelX Chat. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Chat App. All rights reserved.</p>
       </div>
     </div>
   );

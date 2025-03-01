@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { ChatState, Message, User } from './types';
 import { persist } from 'zustand/middleware';
@@ -34,6 +33,8 @@ const saveUserToStorage = (user: User | null, rememberMe: boolean = false) => {
       
       if (rememberMe) {
         localStorage.setItem('currentUser', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('currentUser');
       }
     } else {
       sessionStorage.removeItem('currentUser');
@@ -63,6 +64,8 @@ const saveLastActiveChatId = (id: string | null, rememberMe: boolean = false) =>
       
       if (rememberMe) {
         localStorage.setItem('lastActiveChatId', id);
+      } else {
+        localStorage.removeItem('lastActiveChatId');
       }
     } else {
       sessionStorage.removeItem('lastActiveChatId');
@@ -216,6 +219,11 @@ export const useChatStore = create<ChatState>()(
       logout: () => {
         cleanupSubscriptions();
         saveUserToStorage(null);
+        localStorage.removeItem('currentUser');
+        sessionStorage.removeItem('currentUser');
+        localStorage.removeItem('lastActiveChatId');
+        sessionStorage.removeItem('lastActiveChatId');
+        
         set({ 
           currentUser: null, 
           selectedUser: null, 
@@ -249,11 +257,12 @@ export const useChatStore = create<ChatState>()(
         },
         setItem: (name, value) => {
           try {
-            // Fix the type error by ensuring we're passing a string to JSON.parse
-            // First, cast to unknown, then to string to satisfy TypeScript
-            const stringValue = String(value);
-            const parsedValue = JSON.parse(stringValue);
-            const { rememberMe } = parsedValue;
+            // Fix the type error by converting value to string before parsing
+            const stringValue = JSON.stringify(value);
+            
+            // Parse the value to extract rememberMe flag
+            const parsedObj = JSON.parse(String(value));
+            const { rememberMe } = parsedObj;
             
             // Always save to sessionStorage
             sessionStorage.setItem(name, stringValue);
