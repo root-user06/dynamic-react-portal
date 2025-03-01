@@ -249,9 +249,11 @@ export const useChatStore = create<ChatState>()(
         },
         setItem: (name, value) => {
           try {
-            const parsedValue = JSON.parse(value as string);
+            // Fix the type error by ensuring we're passing a string to JSON.parse
+            // First, cast to unknown, then to string to satisfy TypeScript
+            const stringValue = String(value);
+            const parsedValue = JSON.parse(stringValue);
             const { rememberMe } = parsedValue;
-            const stringValue = JSON.stringify(parsedValue);
             
             // Always save to sessionStorage
             sessionStorage.setItem(name, stringValue);
