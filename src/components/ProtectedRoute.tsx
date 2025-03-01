@@ -13,34 +13,46 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const location = useLocation();
   const { currentUser, setCurrentUser, checkSession } = useChatStore();
   const [isLoading, setIsLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
   const auth = getAuth();
 
   useEffect(() => {
-    // Check if we have a user in our storage
+    // Check if we have a user in our storage first
     const hasSession = checkSession();
-    console.log("Session check in protected route:", hasSession);
     
     // Set up Firebase auth state listener
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user && currentUser) {
         // Firebase says user is logged out but our store thinks they're logged in
+        // This is an edge case where we need to clear our store
         setCurrentUser(null);
       }
-      setAuthChecked(true);
+      
+      // Always set loading to false once we've checked auth
+      setIsLoading(false);
+    }, (error) => {
+      // Handle any Firebase auth errors
+      console.error("Firebase auth error:", error);
       setIsLoading(false);
     });
 
-    // If we already have a session, don't wait for Firebase
+    // If we already have a session, don't wait too long for Firebase
     if (hasSession) {
-      setIsLoading(false);
+      // Set a timeout to ensure we don't wait forever if Firebase is slow
+      const timeout = setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
+      
+      return () => {
+        clearTimeout(timeout);
+        unsubscribe();
+      };
     }
 
     return () => unsubscribe();
   }, [auth, setCurrentUser, checkSession, currentUser]);
 
   // Show loader while checking authentication
-  if (isLoading && !authChecked) {
+  if (isLoading) {
     return <Loader />;
   }
 
