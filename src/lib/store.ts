@@ -236,28 +236,43 @@ export const useChatStore = create<ChatState>()(
       storage: {
         getItem: (name) => {
           // Try to get from sessionStorage first, then localStorage
-          const sessionValue = sessionStorage.getItem(name);
-          if (sessionValue) return JSON.parse(sessionValue);
-          
-          const localValue = localStorage.getItem(name);
-          return localValue ? JSON.parse(localValue) : null;
+          try {
+            const sessionValue = sessionStorage.getItem(name);
+            if (sessionValue) return JSON.parse(sessionValue);
+            
+            const localValue = localStorage.getItem(name);
+            return localValue ? JSON.parse(localValue) : null;
+          } catch (error) {
+            console.error('Error getting item from storage:', error);
+            return null;
+          }
         },
         setItem: (name, value) => {
-          const { rememberMe } = JSON.parse(value);
-          
-          // Always save to sessionStorage
-          sessionStorage.setItem(name, value);
-          
-          // Save to localStorage only if rememberMe is true
-          if (rememberMe) {
-            localStorage.setItem(name, value);
-          } else {
-            localStorage.removeItem(name);
+          try {
+            const parsedValue = JSON.parse(value as string);
+            const { rememberMe } = parsedValue;
+            const stringValue = JSON.stringify(parsedValue);
+            
+            // Always save to sessionStorage
+            sessionStorage.setItem(name, stringValue);
+            
+            // Save to localStorage only if rememberMe is true
+            if (rememberMe) {
+              localStorage.setItem(name, stringValue);
+            } else {
+              localStorage.removeItem(name);
+            }
+          } catch (error) {
+            console.error('Error setting item in storage:', error);
           }
         },
         removeItem: (name) => {
-          sessionStorage.removeItem(name);
-          localStorage.removeItem(name);
+          try {
+            sessionStorage.removeItem(name);
+            localStorage.removeItem(name);
+          } catch (error) {
+            console.error('Error removing item from storage:', error);
+          }
         },
       },
     }
