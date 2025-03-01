@@ -15,14 +15,12 @@ import {
 } from 'firebase/auth';
 import { Message, User } from './types';
 
-// Declare custom window property
 declare global {
   interface Window {
     activityTimeout?: NodeJS.Timeout;
   }
 }
 
-// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCcWUwbXc6r1M14CNfeojVDo7SyFylvrY8",
   authDomain: "website-database-b5b62.firebaseapp.com",
@@ -34,7 +32,6 @@ const firebaseConfig = {
   measurementId: "G-4F1W5ZS53S"
 };
 
-// Initialize Firebase with error handling
 let app;
 try {
   app = initializeApp(firebaseConfig);
@@ -47,12 +44,10 @@ try {
   app = getApp(); // Get the already initialized app
 }
 
-// Initialize Firebase services
 const database = getDatabase(app);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Helper function to format auth errors
 const formatAuthError = (error: AuthError): string => {
   switch (error.code) {
     case 'auth/invalid-email':
@@ -84,7 +79,6 @@ const formatAuthError = (error: AuthError): string => {
   }
 };
 
-// Auth Operations
 export const registerWithEmail = async (email: string, password: string, name: string) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -99,6 +93,7 @@ export const registerWithEmail = async (email: string, password: string, name: s
     await updateUserStatus(user);
     return user;
   } catch (error: any) {
+    console.error('Registration error:', error);
     throw new Error(formatAuthError(error));
   }
 };
@@ -116,13 +111,13 @@ export const loginWithEmail = async (email: string, password: string) => {
     await updateUserStatus(user);
     return user;
   } catch (error: any) {
+    console.error('Login error:', error);
     throw new Error(formatAuthError(error));
   }
 };
 
 export const loginWithGoogle = async () => {
   try {
-    // Configure Google provider
     googleProvider.setCustomParameters({
       prompt: 'select_account'
     });
@@ -139,11 +134,11 @@ export const loginWithGoogle = async () => {
     await updateUserStatus(user);
     return user;
   } catch (error: any) {
+    console.error('Google login error:', error);
     throw new Error(formatAuthError(error));
   }
 };
 
-// Initialize RecaptchaVerifier
 export const initRecaptcha = (buttonId: string) => {
   return new RecaptchaVerifier(auth, buttonId, {
     size: 'invisible'
@@ -154,7 +149,6 @@ export const loginWithPhone = async (phoneNumber: string, recaptchaVerifier: Rec
   return signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
 };
 
-// Database References
 const getMessagesRef = () => {
   return ref(database, 'messages');
 };
@@ -163,7 +157,6 @@ const getUsersRef = () => {
   return ref(database, 'users');
 };
 
-// Message Operations
 export const sendMessage = async (message: Message) => {
   const newMessageRef = push(ref(database, 'messages'));
   await set(newMessageRef, { ...message, id: newMessageRef.key });
@@ -184,7 +177,6 @@ export const subscribeToMessages = (callback: (messages: Message[]) => void): ()
   return () => unsubscribe();
 };
 
-// User Operations
 export const updateUserStatus = async (user: User) => {
   if (!user || !user.id) return;
 
@@ -210,12 +202,10 @@ export const updateUserStatus = async (user: User) => {
       });
   });
 
-  // Clear any existing activity timeout
   if (window.activityTimeout) {
     clearTimeout(window.activityTimeout);
   }
 
-  // Set up activity monitoring
   const activityEvents = ['mousedown', 'keydown', 'touchstart', 'mousemove'];
   let timeoutId: NodeJS.Timeout;
 
@@ -227,7 +217,7 @@ export const updateUserStatus = async (user: User) => {
         isOnline: false,
         lastSeen: new Date().toISOString()
       });
-    }, 60000); // Set to offline after 1 minute of inactivity
+    }, 60000);
   };
 
   const handleActivity = () => {
@@ -244,7 +234,6 @@ export const updateUserStatus = async (user: User) => {
     window.addEventListener(event, handleActivity);
   });
 
-  // Initial status
   set(userStatusRef, {
     ...user,
     isOnline: true,
@@ -253,7 +242,6 @@ export const updateUserStatus = async (user: User) => {
 
   resetActivityTimeout();
 
-  // Cleanup function
   return () => {
     activityEvents.forEach(event => {
       window.removeEventListener(event, handleActivity);
@@ -290,13 +278,13 @@ export const logoutUser = async () => {
     await signOut(auth);
     return true;
   } catch (error: any) {
+    console.error('Logout error:', error);
     throw new Error('Failed to logout. Please try again.');
   }
 };
 
 export { database };
 
-// Initialize some demo users
 const initializeDemoUsers = async () => {
   const demoUsers = [
     {
@@ -324,10 +312,8 @@ const initializeDemoUsers = async () => {
 
   const usersRef = ref(database, 'users');
   
-  // Check if users already exist
   onValue(usersRef, (snapshot) => {
     if (!snapshot.exists() || Object.keys(snapshot.val()).length < 3) {
-      // Add demo users only if there are fewer than 3 users
       demoUsers.forEach(user => {
         set(ref(database, `users/${user.id}`), user);
       });
@@ -335,5 +321,4 @@ const initializeDemoUsers = async () => {
   }, { onlyOnce: true });
 };
 
-// Call the function to initialize users when the app starts
 initializeDemoUsers();

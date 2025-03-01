@@ -257,11 +257,11 @@ export const useChatStore = create<ChatState>()(
         },
         setItem: (name, value) => {
           try {
-            // Fix the type error by converting value to string before parsing
+            // Fix the type error by converting value to string before storing
             const stringValue = JSON.stringify(value);
             
             // Parse the value to extract rememberMe flag
-            const parsedObj = JSON.parse(String(value));
+            const parsedObj = JSON.parse(stringValue);
             const { rememberMe } = parsedObj;
             
             // Always save to sessionStorage

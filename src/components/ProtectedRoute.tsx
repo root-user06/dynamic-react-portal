@@ -13,6 +13,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const location = useLocation();
   const { currentUser, setCurrentUser, checkSession } = useChatStore();
   const [isLoading, setIsLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const auth = getAuth();
 
   useEffect(() => {
@@ -20,10 +21,13 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     const hasSession = checkSession();
     console.log("Session check in protected route:", hasSession);
     
+    // Set up Firebase auth state listener
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user && currentUser) {
+        // Firebase says user is logged out but our store thinks they're logged in
         setCurrentUser(null);
       }
+      setAuthChecked(true);
       setIsLoading(false);
     });
 
@@ -35,15 +39,18 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return () => unsubscribe();
   }, [auth, setCurrentUser, checkSession, currentUser]);
 
-  if (isLoading) {
+  // Show loader while checking authentication
+  if (isLoading && !authChecked) {
     return <Loader />;
   }
 
+  // If no user is authenticated, redirect to login
   if (!currentUser) {
     // Redirect to the landing page, but save the attempted location
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
+  // User is authenticated, render children
   return <>{children}</>;
 };
 

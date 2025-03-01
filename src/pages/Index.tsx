@@ -16,13 +16,16 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Mail, Lock, User as UserIcon, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import Loader from '@/components/ui/loader';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { setCurrentUser, currentUser, lastActiveChatId, setSelectedUser, onlineUsers } = useChatStore();
+  const { setCurrentUser, currentUser, lastActiveChatId, setSelectedUser, onlineUsers, setRememberMe } = useChatStore();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMeLocal, setRememberMeLocal] = useState(false);
   
   // Email Auth States
   const [email, setEmail] = useState('');
@@ -49,9 +52,20 @@ const Index = () => {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password || !name) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
+      setRememberMe(rememberMeLocal);
       const user = await registerWithEmail(email, password, name);
       setCurrentUser(user);
       toast({
@@ -59,6 +73,7 @@ const Index = () => {
         description: "Account created successfully!",
         className: "bg-green-50 border-green-200"
       });
+      navigate('/chat');
     } catch (error: any) {
       toast({
         title: "Authentication Error",
@@ -74,6 +89,7 @@ const Index = () => {
     setIsLoading(true);
     
     try {
+      setRememberMe(rememberMeLocal);
       const user = await loginWithGoogle();
       setCurrentUser(user);
       toast({
@@ -81,6 +97,7 @@ const Index = () => {
         description: "Logged in with Google successfully!",
         className: "bg-green-50 border-green-200"
       });
+      navigate('/chat');
     } catch (error: any) {
       console.error('Google login error:', error);
       toast({
@@ -165,6 +182,17 @@ const Index = () => {
                     disabled={isLoading}
                   />
 
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="remember" 
+                      checked={rememberMeLocal} 
+                      onCheckedChange={(checked) => setRememberMeLocal(checked as boolean)}
+                    />
+                    <Label htmlFor="remember" className="text-sm text-gray-600">
+                      Remember me
+                    </Label>
+                  </div>
+
                   <Button 
                     type="submit" 
                     className="w-full py-6 bg-[#46C8B6] hover:bg-[#38a596] text-black font-semibold text-base rounded-full"
@@ -199,6 +227,18 @@ const Index = () => {
                   <p className="text-center text-sm text-gray-600 mb-4">
                     Continue with your Google account for a seamless experience
                   </p>
+                  
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Checkbox 
+                      id="remember-google" 
+                      checked={rememberMeLocal} 
+                      onCheckedChange={(checked) => setRememberMeLocal(checked as boolean)}
+                    />
+                    <Label htmlFor="remember-google" className="text-sm text-gray-600">
+                      Remember me
+                    </Label>
+                  </div>
+                  
                   <Button 
                     onClick={handleGoogleAuth}
                     className="w-full py-6 border-[#46C8B6] text-[#46C8B6] bg-transparent hover:bg-[#46C8B6]/10 font-semibold text-base rounded-full flex items-center justify-center gap-2"

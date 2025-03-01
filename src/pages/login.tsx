@@ -25,6 +25,7 @@ const Login = () => {
   const { setCurrentUser, currentUser, lastActiveChatId, setSelectedUser, onlineUsers, setRememberMe, rememberMe } = useChatStore();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMeLocal, setRememberMeLocal] = useState(rememberMe);
   
   // Email Auth States
   const [email, setEmail] = useState('');
@@ -50,9 +51,20 @@ const Login = () => {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both email and password",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
+      setRememberMe(rememberMeLocal);
       const user = await loginWithEmail(email, password);
       setCurrentUser(user);
       toast({
@@ -60,6 +72,7 @@ const Login = () => {
         description: "Logged in successfully!",
         className: "bg-green-50 border-green-200"
       });
+      navigate('/chat');
     } catch (error: any) {
       toast({
         title: "Authentication Error",
@@ -75,6 +88,7 @@ const Login = () => {
     setIsLoading(true);
     
     try {
+      setRememberMe(rememberMeLocal);
       const user = await loginWithGoogle();
       setCurrentUser(user);
       toast({
@@ -82,6 +96,7 @@ const Login = () => {
         description: "Logged in with Google successfully!",
         className: "bg-green-50 border-green-200"
       });
+      navigate('/chat');
     } catch (error: any) {
       console.error('Google login error:', error);
       toast({
@@ -92,10 +107,6 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleRememberMeChange = (checked: boolean) => {
-    setRememberMe(checked);
   };
 
   if (isRedirecting) {
@@ -163,8 +174,8 @@ const Login = () => {
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id="remember" 
-                      checked={rememberMe} 
-                      onCheckedChange={handleRememberMeChange}
+                      checked={rememberMeLocal} 
+                      onCheckedChange={(checked) => setRememberMeLocal(checked as boolean)}
                     />
                     <Label htmlFor="remember" className="text-sm text-gray-600">
                       Remember me
@@ -205,6 +216,18 @@ const Login = () => {
                   <p className="text-center text-sm text-gray-600 mb-4">
                     Continue with your Google account for a seamless experience
                   </p>
+                  
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Checkbox 
+                      id="remember-google" 
+                      checked={rememberMeLocal} 
+                      onCheckedChange={(checked) => setRememberMeLocal(checked as boolean)}
+                    />
+                    <Label htmlFor="remember-google" className="text-sm text-gray-600">
+                      Remember me
+                    </Label>
+                  </div>
+                  
                   <Button 
                     onClick={handleGoogleAuth}
                     className="w-full py-6 border-[#46C8B6] text-[#46C8B6] bg-transparent hover:bg-[#46C8B6]/10 font-semibold text-base rounded-full flex items-center justify-center gap-2"
@@ -240,17 +263,6 @@ const Login = () => {
                       </>
                     )}
                   </Button>
-                  
-                  <div className="flex items-center space-x-2 mt-4">
-                    <Checkbox 
-                      id="remember-google" 
-                      checked={rememberMe} 
-                      onCheckedChange={handleRememberMeChange}
-                    />
-                    <Label htmlFor="remember-google" className="text-sm text-gray-600">
-                      Remember me
-                    </Label>
-                  </div>
                 </div>
               </TabsContent>
             </Tabs>
@@ -260,7 +272,7 @@ const Login = () => {
 
       {/* Footer */}
       <div className="p-4 text-center text-gray-500 text-sm">
-        <p>© {new Date().getFullYear()} Chat App. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} PoudelX Chat. All rights reserved.</p>
       </div>
     </div>
   );
