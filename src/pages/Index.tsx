@@ -16,6 +16,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Mail, Lock, User as UserIcon, Loader2 } from 'lucide-react';
+import Loader from '@/components/ui/loader';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -93,14 +94,7 @@ const Index = () => {
   };
 
   if (isRedirecting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Redirecting...</span>
-        </div>
-      </div>
-    );
+    return <Loader />;
   }
 
   return (

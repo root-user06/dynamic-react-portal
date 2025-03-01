@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useChatStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import Loader from '@/components/ui/loader';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -35,9 +36,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }, [auth, setCurrentUser, checkSession, currentUser]);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#46C8B6]"></div>
-    </div>;
+    return <Loader />;
   }
 
   if (!currentUser) {

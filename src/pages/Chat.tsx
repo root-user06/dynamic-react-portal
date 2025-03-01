@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import UserList from '@/components/UserList';
 import ChatWindow from '@/components/ChatWindow';
@@ -10,6 +9,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { User, MessageCircle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import Loader from '@/components/ui/loader';
 
 const Chat = () => {
   const { currentUser, selectedUser, setSelectedUser, logout } = useChatStore();
@@ -19,13 +19,11 @@ const Chat = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Debug info
   useEffect(() => {
     console.log("Current user in Chat page:", currentUser);
     console.log("Selected user in Chat page:", selectedUser);
   }, [currentUser, selectedUser]);
 
-  // Simulate loading state
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -34,7 +32,6 @@ const Chat = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -45,7 +42,6 @@ const Chat = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Handle user status updates
   useEffect(() => {
     if (currentUser) {
       updateUserStatus({

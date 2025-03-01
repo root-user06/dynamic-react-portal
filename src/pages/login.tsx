@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChatStore } from '../lib/store';
@@ -19,6 +18,7 @@ import {
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import Loader from '@/components/ui/loader';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -99,14 +99,7 @@ const Login = () => {
   };
 
   if (isRedirecting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Redirecting to your chats...</span>
-        </div>
-      </div>
-    );
+    return <Loader />;
   }
 
   return (
