@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { ChatState, Message, User } from './types';
 import { persist } from 'zustand/middleware';
@@ -92,6 +91,13 @@ const cleanupSubscriptions = () => {
     usersUnsubscribe();
     usersUnsubscribe = null;
   }
+};
+
+// Define the type for our storage value to fix type errors
+type StoreState = {
+  currentUser: User | null;
+  lastActiveChatId: string | null;
+  rememberMe: boolean;
 };
 
 export const useChatStore = create<ChatState>()(
@@ -299,15 +305,14 @@ export const useChatStore = create<ChatState>()(
         lastActiveChatId: state.lastActiveChatId,
         rememberMe: state.rememberMe
       }),
-      // Simplified and more stable storage implementation
+      // Fixed storage implementation with proper type handling
       storage: {
         getItem: (name) => {
           try {
             const sessionValue = sessionStorage.getItem(name);
-            if (sessionValue) return sessionValue;
-            
-            const localValue = localStorage.getItem(name);
-            return localValue || null;
+            const value = sessionValue || localStorage.getItem(name);
+            // Return parsed value or null, which is a valid StorageValue type
+            return value ? JSON.parse(value) : null;
           } catch (error) {
             console.error('Error getting item from storage:', error);
             return null;
