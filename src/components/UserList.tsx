@@ -14,11 +14,6 @@ const UserList = ({ onChatSelect }: UserListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Debug statement
-    console.log("Current users in store:", onlineUsers);
-  }, [onlineUsers]);
-
   const getLastMessage = (userId: string): Message | undefined => {
     return messages
       .filter(m => (m.senderId === userId && m.receiverId === currentUser?.id) || 
@@ -87,90 +82,80 @@ const UserList = ({ onChatSelect }: UserListProps) => {
 
       {/* Online Users Horizontal Scroll */}
       <div className="p-4 overflow-x-auto whitespace-nowrap border-b border-gray-200">
-        {onlineUsersFiltered.length > 0 ? (
-          <div className="flex space-x-4">
-            {onlineUsersFiltered.map((user) => (
-              <div
-                key={user.id}
-                onClick={() => handleUserClick(user)}
-                className="flex flex-col items-center cursor-pointer"
-              >
-                <div className="relative">
-                  <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-lg">
-                    {user.name ? user.name[0].toUpperCase() : '?'}
-                  </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+        <div className="flex space-x-4">
+          {onlineUsersFiltered.map((user) => (
+            <div
+              key={user.id}
+              onClick={() => handleUserClick(user)}
+              className="flex flex-col items-center cursor-pointer"
+            >
+              <div className="relative">
+                <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-lg">
+                  {user.name[0].toUpperCase()}
                 </div>
-                <span className="text-xs mt-1 max-w-[60px] truncate">{user.name}</span>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-gray-500 text-sm text-center">No users online</div>
-        )}
+              <span className="text-xs mt-1 max-w-[60px] truncate">{user.name}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
-        {filteredAndSortedUsers.length > 0 ? (
-          filteredAndSortedUsers.map((user) => {
-            const lastMessage = getLastMessage(user.id);
-            const unreadCount = getUnreadCount(user.id);
-            
-            return (
-              <div
-                key={user.id}
-                onClick={() => handleUserClick(user)}
-                className={`p-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${
-                  selectedUser?.id === user.id ? 'bg-gray-50' : ''
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600">
-                      {user.name ? user.name[0].toUpperCase() : '?'}
-                    </div>
-                    {user.isOnline && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
-                    )}
+        {filteredAndSortedUsers.map((user) => {
+          const lastMessage = getLastMessage(user.id);
+          const unreadCount = getUnreadCount(user.id);
+          
+          return (
+            <div
+              key={user.id}
+              onClick={() => handleUserClick(user)}
+              className={`p-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${
+                selectedUser?.id === user.id ? 'bg-gray-50' : ''
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600">
+                    {user.name[0].toUpperCase()}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center">
-                      <p className={`font-medium truncate ${unreadCount > 0 ? 'text-black' : 'text-gray-900'}`}>
-                        {user.name}
-                      </p>
-                      {lastMessage && (
-                        <span className="text-xs text-gray-500">
-                          {new Date(lastMessage.timestamp).toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </span>
-                      )}
-                    </div>
-                    {lastMessage && (
-                      <p className={`text-sm truncate ${
-                        unreadCount > 0 ? 'font-medium text-gray-900' : 'text-gray-500'
-                      }`}>
-                        {lastMessage.senderId === currentUser?.id ? 'You: ' : ''}
-                        {lastMessage.content}
-                      </p>
-                    )}
-                  </div>
-                  {unreadCount > 0 && (
-                    <div className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center">
-                      {unreadCount}
-                    </div>
+                  {user.isOnline && (
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
                   )}
                 </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center">
+                    <p className={`font-medium truncate ${unreadCount > 0 ? 'text-black' : 'text-gray-900'}`}>
+                      {user.name}
+                    </p>
+                    {lastMessage && (
+                      <span className="text-xs text-gray-500">
+                        {new Date(lastMessage.timestamp).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </span>
+                    )}
+                  </div>
+                  {lastMessage && (
+                    <p className={`text-sm truncate ${
+                      unreadCount > 0 ? 'font-medium text-gray-900' : 'text-gray-500'
+                    }`}>
+                      {lastMessage.senderId === currentUser?.id ? 'You: ' : ''}
+                      {lastMessage.content}
+                    </p>
+                  )}
+                </div>
+                {unreadCount > 0 && (
+                  <div className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center">
+                    {unreadCount}
+                  </div>
+                )}
               </div>
-            );
-          })
-        ) : (
-          <div className="p-4 text-gray-500 text-sm text-center">
-            No users found
-          </div>
-        )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

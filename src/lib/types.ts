@@ -2,10 +2,10 @@
 export interface User {
   id: string;
   name: string;
-  email?: string;
-  photoURL?: string;
-  isOnline?: boolean;
-  lastSeen?: string;
+  isOnline: boolean;
+  lastSeen: string;
+  email?: string; // Optional for future authentication
+  photoURL?: string; // Optional for future profile photos
 }
 
 export interface Message {
@@ -23,12 +23,8 @@ export interface ChatState {
   messages: Message[];
   onlineUsers: User[];
   lastActiveChatId: string | null;
-  rememberMe: boolean;
-  setRememberMe: (value: boolean) => void;
-  setCurrentUser: (user: User | null) => void;
+  setCurrentUser: (user: User) => void;
   setSelectedUser: (user: User | null) => void;
-  addMessage: (message: Message) => Promise<void>;
+  addMessage: (message: Message) => void;
   updateOnlineUsers: (users: User[]) => void;
-  checkSession: () => boolean;
-  logout: () => void;
 }

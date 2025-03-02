@@ -1,51 +1,36 @@
-
-import { createBrowserRouter } from 'react-router-dom';
-import Chat from './pages/Chat';
-import Index from './pages/Index';
-import NotFound from './pages/NotFound';
-import Landing from './pages/Landing';
-import Login from './pages/login';
-import ProtectedRoute from './components/ProtectedRoute';
-
+import { createBrowserRouter } from "react-router-dom";
+import Chat from "./pages/Chat";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import Landing from "./pages/landing";
+import Login from "./pages/Login";
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <Landing />,
   },
   {
-    path: '/auth/register',
+    path: "/auth/signup",
     element: <Index />,
   },
   {
-    path: '/auth/login',
+    path: "/auth/login",
     element: <Login />,
   },
   {
-    path: '/chat',
-    element: (
-      <ProtectedRoute>
-        <Chat />
-      </ProtectedRoute>
-    ),
+    path: "/chat",
+    element: <Chat />,
   },
   {
-    path: '/chat/:id',
-    element: (
-      <ProtectedRoute>
-        <Chat />
-      </ProtectedRoute>
-    ),
+    path: "/chat/:id",
+    element: <Chat />,
   },
   {
-    path: '/chat/profile',
-    element: (
-      <ProtectedRoute>
-        <Chat />
-      </ProtectedRoute>
-    ),
+    path: "/chat/profile",
+    element: <Chat />,
   },
   {
-    path: '*',
+    path: "*",
     element: <NotFound />,
   },
 ]);

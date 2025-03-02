@@ -1,231 +1,110 @@
+
 import { create } from 'zustand';
 import { ChatState, Message, User } from './types';
 import { persist } from 'zustand/middleware';
 import { sendMessage, updateUserStatus, subscribeToMessages, subscribeToUsers, updateMessageReadStatus } from './firebase';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
-// Simplified storage functions to prevent race conditions
 const loadUserFromStorage = (): User | null => {
-  try {
-    const localUser = localStorage.getItem('currentUser');
-    const sessionUser = sessionStorage.getItem('currentUser');
-    
-    return localUser ? JSON.parse(localUser) : 
-           sessionUser ? JSON.parse(sessionUser) : null;
-  } catch (error) {
-    console.error('Error loading user from storage:', error);
-    return null;
+  const sessionUser = sessionStorage.getItem('currentUser');
+  if (sessionUser) {
+    return JSON.parse(sessionUser);
+  }
+
+  const cookieUser = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('currentUser='));
+  
+  if (cookieUser) {
+    return JSON.parse(decodeURIComponent(cookieUser.split('=')[1]));
+  }
+
+  return null;
+};
+
+const saveUserToStorage = (user: User | null) => {
+  if (user) {
+    sessionStorage.setItem('currentUser', JSON.stringify(user));
+    const date = new Date();
+    date.setTime(date.getTime() + (7 * 24 * 60 * 60 * 1000));
+    document.cookie = `currentUser=${encodeURIComponent(JSON.stringify(user))}; expires=${date.toUTCString()}; path=/`;
+  } else {
+    sessionStorage.removeItem('currentUser');
+    document.cookie = 'currentUser=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
   }
 };
 
-const saveUserToStorage = (user: User | null, rememberMe: boolean = false) => {
-  try {
-    if (user) {
-      // Always save to sessionStorage for the current session
-      sessionStorage.setItem('currentUser', JSON.stringify(user));
-      
-      // Only save to localStorage if rememberMe is true
-      if (rememberMe) {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-      } else {
-        localStorage.removeItem('currentUser');
-      }
-    } else {
-      // Clear both storages on logout
-      sessionStorage.removeItem('currentUser');
-      localStorage.removeItem('currentUser');
-    }
-  } catch (error) {
-    console.error('Error saving user to storage:', error);
-  }
-};
-
-// Similar simplified functions for last active chat ID
 const loadLastActiveChatId = (): string | null => {
-  try {
-    const sessionChatId = sessionStorage.getItem('lastActiveChatId');
-    const localChatId = localStorage.getItem('lastActiveChatId');
-    
-    return sessionChatId || localChatId || null;
-  } catch (error) {
-    console.error('Error loading last active chat ID:', error);
-    return null;
-  }
+  return localStorage.getItem('lastActiveChatId');
 };
 
-const saveLastActiveChatId = (id: string | null, rememberMe: boolean = false) => {
-  try {
-    if (id) {
-      sessionStorage.setItem('lastActiveChatId', id);
-      
-      if (rememberMe) {
-        localStorage.setItem('lastActiveChatId', id);
-      } else {
-        localStorage.removeItem('lastActiveChatId');
-      }
-    } else {
-      sessionStorage.removeItem('lastActiveChatId');
-      localStorage.removeItem('lastActiveChatId');
-    }
-  } catch (error) {
-    console.error('Error saving last active chat ID:', error);
+const saveLastActiveChatId = (chatId: string | null) => {
+  if (chatId) {
+    localStorage.setItem('lastActiveChatId', chatId);
+  } else {
+    localStorage.removeItem('lastActiveChatId');
   }
-};
-
-// Subscription management with proper cleanup
-let authUnsubscribe: (() => void) | null = null;
-let messagesUnsubscribe: (() => void) | null = null;
-let usersUnsubscribe: (() => void) | null = null;
-
-// Cleanup function for all subscriptions
-const cleanupSubscriptions = () => {
-  if (authUnsubscribe) {
-    authUnsubscribe();
-    authUnsubscribe = null;
-  }
-  if (messagesUnsubscribe) {
-    messagesUnsubscribe();
-    messagesUnsubscribe = null;
-  }
-  if (usersUnsubscribe) {
-    usersUnsubscribe();
-    usersUnsubscribe = null;
-  }
-};
-
-// Define the type for our storage value to fix type errors
-type StoreState = {
-  currentUser: User | null;
-  lastActiveChatId: string | null;
-  rememberMe: boolean;
 };
 
 export const useChatStore = create<ChatState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       currentUser: loadUserFromStorage(),
       selectedUser: null,
       messages: [],
       onlineUsers: [],
       lastActiveChatId: loadLastActiveChatId(),
-      rememberMe: false,
-      
-      setRememberMe: (value: boolean) => set({ rememberMe: value }),
-      
-      setCurrentUser: async (user: User | null) => {
+      setCurrentUser: async (user: User) => {
         try {
-          const rememberMe = get().rememberMe;
+          saveUserToStorage(user);
+          const cleanup = await updateUserStatus(user);
+          set({ currentUser: user });
           
-          if (user) {
-            // Save user first to prevent race conditions
-            saveUserToStorage(user, rememberMe);
-            
-            // Then update Firebase status
-            const cleanup = await updateUserStatus(user).catch(err => {
-              console.error("Error updating user status:", err);
-              return () => {}; // Return empty cleanup function on error
-            });
-            
-            // Update state
-            set({ currentUser: user });
-
-            // Setup real-time subscriptions when user logs in
-            if (typeof window !== 'undefined') {
-              // Cleanup any existing subscriptions
-              cleanupSubscriptions();
-
-              // Setup new subscriptions with error handling
-              try {
-                messagesUnsubscribe = subscribeToMessages((messages) => {
-                  set({ messages });
-                });
-              } catch (err) {
-                console.error("Error subscribing to messages:", err);
-              }
-
-              try {
-                usersUnsubscribe = subscribeToUsers((users) => {
-                  set({ onlineUsers: users });
-                });
-              } catch (err) {
-                console.error("Error subscribing to users:", err);
-              }
-
-              // Handle cleanup when window closes
-              const handleUnload = () => {
-                cleanup();
-                cleanupSubscriptions();
-              };
-              
-              window.removeEventListener('beforeunload', handleUnload); // Remove existing
-              window.addEventListener('beforeunload', handleUnload);
-            }
-          } else {
-            // Cleanup on logout
-            cleanupSubscriptions();
-            saveUserToStorage(null);
-            set({ 
-              currentUser: null, 
-              selectedUser: null, 
-              messages: [], 
-              onlineUsers: [],
-              lastActiveChatId: null 
-            });
-          }
+          // Handle cleanup when component unmounts
+          window.addEventListener('beforeunload', cleanup);
+          return () => {
+            cleanup();
+            window.removeEventListener('beforeunload', cleanup);
+          };
         } catch (error) {
-          console.error('Error in setCurrentUser:', error);
-          // Still update user in state even if Firebase fails
+          console.error('Error updating user status:', error);
           set({ currentUser: user });
         }
       },
-      
       setSelectedUser: (user: User | null) => {
-        const rememberMe = get().rememberMe;
-        
         set((state) => {
           if (user && user.id !== state.currentUser?.id) {
-            try {
-              saveLastActiveChatId(user.id, rememberMe);
-              
-              // Mark messages as read immediately
-              const updatedMessages = state.messages.map(msg => {
-                if (msg.senderId === user.id && 
-                    msg.receiverId === state.currentUser?.id && 
-                    !msg.isRead) {
-                  updateMessageReadStatus(msg.id, true).catch(console.error);
-                  return { ...msg, isRead: true };
-                }
-                return msg;
-              });
-              
-              return { 
-                selectedUser: user, 
-                messages: updatedMessages,
-                lastActiveChatId: user.id
-              };
-            } catch (error) {
-              console.error('Error in setSelectedUser:', error);
-              return { selectedUser: user, lastActiveChatId: user.id };
-            }
+            saveLastActiveChatId(user.id);
+            
+            // Mark messages as read immediately
+            const updatedMessages = state.messages.map(msg => {
+              if (msg.senderId === user.id && 
+                  msg.receiverId === state.currentUser?.id && 
+                  !msg.isRead) {
+                // Update read status in Firebase
+                updateMessageReadStatus(msg.id, true)
+                  .catch(console.error);
+                return { ...msg, isRead: true };
+              }
+              return msg;
+            });
+            
+            return { 
+              selectedUser: user, 
+              messages: updatedMessages,
+              lastActiveChatId: user.id
+            };
           }
           
-          try {
-            saveLastActiveChatId(null, rememberMe);
-          } catch (error) {
-            console.error('Error clearing lastActiveChatId:', error);
-          }
-          
+          saveLastActiveChatId(null);
           return { 
             selectedUser: user,
             lastActiveChatId: null
           };
         });
       },
-      
       addMessage: async (message: Message) => {
-        // Add message to local state first for UI responsiveness
         set((state) => {
-          // Check for duplicate messages to prevent UI issues
+          // Check for duplicate messages
           const messageExists = state.messages.some(msg => 
             msg.id === message.id || 
             (msg.senderId === message.senderId && 
@@ -241,142 +120,29 @@ export const useChatStore = create<ChatState>()(
         });
         
         try {
-          // Then send to Firebase
           await sendMessage(message);
         } catch (error) {
           console.error('Error sending message:', error);
-          // Remove message from state if sending failed
-          set((state) => ({
-            messages: state.messages.filter(m => m.id !== message.id)
-          }));
-          throw error;
         }
       },
-      
       updateOnlineUsers: (users: User[]) => set({ onlineUsers: users }),
-      
-      checkSession: () => {
-        try {
-          const user = loadUserFromStorage();
-          if (user) {
-            get().setCurrentUser(user);
-            return true;
-          }
-        } catch (error) {
-          console.error('Error checking session:', error);
-        }
-        return false;
-      },
-      
-      logout: () => {
-        try {
-          cleanupSubscriptions();
-          saveUserToStorage(null);
-          localStorage.removeItem('currentUser');
-          sessionStorage.removeItem('currentUser');
-          localStorage.removeItem('lastActiveChatId');
-          sessionStorage.removeItem('lastActiveChatId');
-          
-          set({ 
-            currentUser: null, 
-            selectedUser: null, 
-            messages: [], 
-            onlineUsers: [],
-            lastActiveChatId: null,
-            rememberMe: false
-          });
-        } catch (error) {
-          console.error('Error during logout:', error);
-          // Force state reset even if storage operations fail
-          set({ 
-            currentUser: null, 
-            selectedUser: null, 
-            messages: [], 
-            onlineUsers: [],
-            lastActiveChatId: null 
-          });
-        }
-      }
     }),
     {
-      name: 'chat-store',
-      partialize: (state) => ({
-        currentUser: state.currentUser,
-        lastActiveChatId: state.lastActiveChatId,
-        rememberMe: state.rememberMe
+      name: 'chat-storage',
+      partialize: (state) => ({ 
+        messages: state.messages
       }),
-      // Fixed storage implementation with proper type handling
-      storage: {
-        getItem: (name) => {
-          try {
-            const sessionValue = sessionStorage.getItem(name);
-            const value = sessionValue || localStorage.getItem(name);
-            // Return parsed value or null, which is a valid StorageValue type
-            return value ? JSON.parse(value) : null;
-          } catch (error) {
-            console.error('Error getting item from storage:', error);
-            return null;
-          }
-        },
-        setItem: (name, value) => {
-          try {
-            // Make sure value is string before storing
-            const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-            
-            // Parse to check for rememberMe flag
-            const parsedObj = JSON.parse(stringValue);
-            const { rememberMe } = parsedObj;
-            
-            // Always save to sessionStorage
-            sessionStorage.setItem(name, stringValue);
-            
-            // Save to localStorage only if rememberMe is true
-            if (rememberMe) {
-              localStorage.setItem(name, stringValue);
-            } else {
-              localStorage.removeItem(name);
-            }
-          } catch (error) {
-            console.error('Error setting item in storage:', error);
-          }
-        },
-        removeItem: (name) => {
-          try {
-            sessionStorage.removeItem(name);
-            localStorage.removeItem(name);
-          } catch (error) {
-            console.error('Error removing item from storage:', error);
-          }
-        },
-      },
     }
   )
 );
 
-// Initialize auth state listener with error handling
+// Subscribe to real-time updates
 if (typeof window !== 'undefined') {
-  try {
-    const auth = getAuth();
-    authUnsubscribe = onAuthStateChanged(auth, 
-      (user) => {
-        if (!user && useChatStore.getState().currentUser) {
-          useChatStore.getState().setCurrentUser(null);
-        }
-      },
-      (error) => {
-        console.error("Firebase auth observer error:", error);
-      }
-    );
-    
-    // Check session on load
-    const hasSession = useChatStore.getState().checkSession();
-    console.log("User session found:", hasSession);
-  } catch (error) {
-    console.error("Error setting up auth listener:", error);
-  }
-}
+  subscribeToMessages((messages) => {
+    useChatStore.setState({ messages });
+  });
 
-// Cleanup subscriptions on window unload
-if (typeof window !== 'undefined') {
-  window.addEventListener('unload', cleanupSubscriptions);
+  subscribeToUsers((users) => {
+    useChatStore.setState({ onlineUsers: users });
+  });
 }
