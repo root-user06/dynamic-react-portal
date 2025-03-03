@@ -23,15 +23,17 @@ declare global {
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCcWUwbXc6r1M14CNfeojVDo7SyFylvrY8",
-  authDomain: "website-database-b5b62.firebaseapp.com",
-  databaseURL: "https://website-database-b5b62-default-rtdb.firebaseio.com",
-  projectId: "website-database-b5b62",
-  storageBucket: "website-database-b5b62.appspot.com",
-  messagingSenderId: "799535806005",
-  appId: "1:799535806005:web:63752dcd35f62feb55a37c",
-  measurementId: "G-4F1W5ZS53S"
+  apiKey: import.meta.env.VITE_POUDELX_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_POUDELX_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_POUDELX_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_POUDELX_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_POUDELX_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_POUDELX_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_POUDELX_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_POUDELX_FIREBASE_MEASUREMENT_ID
 };
+
+
 
 // Initialize Firebase with error handling
 let app;

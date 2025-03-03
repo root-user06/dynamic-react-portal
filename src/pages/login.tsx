@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useChatStore } from '../lib/store';
 import { Button } from "@/components/ui/button";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
 import { motion } from 'framer-motion';
 import { toast } from "@/components/ui/use-toast";
 import { loginWithEmail, loginWithGoogle, resetPassword } from '../lib/firebase';
+import Loader from '@/components/Loader';
 import {
   Dialog,
   DialogContent,
@@ -13,10 +14,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Mail, Lock, Loader2 } from 'lucide-react';
+import { Mail, Lock, } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as any)?.from?.pathname || '/chat';
+  
   const { setCurrentUser, currentUser, lastActiveChatId, setSelectedUser, onlineUsers } = useChatStore();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,14 +37,14 @@ const Login = () => {
         if (lastActiveUser) {
           await setSelectedUser(lastActiveUser);
         }
-        navigate('/chat', { replace: true });
+        navigate(from, { replace: true });
       } else if (currentUser && !isRedirecting) {
         setIsRedirecting(true);
-        navigate('/chat', { replace: true });
+        navigate(from, { replace: true });
       }
     };
     handleRedirect();
-  }, [currentUser, lastActiveChatId, navigate, onlineUsers, setSelectedUser, isRedirecting]);
+  }, [currentUser, lastActiveChatId, navigate, onlineUsers, setSelectedUser, isRedirecting, from]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,8 +116,7 @@ const Login = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
         <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Redirecting...</span>
+          <Loader />
         </div>
       </div>
     );
@@ -180,7 +183,7 @@ const Login = () => {
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader />
                       Sending Reset Link...
                     </div>
                   ) : 'Send Reset Link'}
@@ -192,7 +195,7 @@ const Login = () => {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
               <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader />
                 Signing In...
               </div>
             ) : 'Sign In'}
@@ -206,7 +209,7 @@ const Login = () => {
           >
             {isLoading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader />
                 Connecting to Google...
               </>
             ) : (

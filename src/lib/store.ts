@@ -22,12 +22,13 @@ const loadUserFromStorage = (): User | null => {
 };
 
 const saveUserToStorage = (user: User | null) => {
-  if (user) {
+  if (user && user.id) {
     sessionStorage.setItem('currentUser', JSON.stringify(user));
     const date = new Date();
     date.setTime(date.getTime() + (7 * 24 * 60 * 60 * 1000));
     document.cookie = `currentUser=${encodeURIComponent(JSON.stringify(user))}; expires=${date.toUTCString()}; path=/`;
   } else {
+    // Clear storage if user is not valid
     sessionStorage.removeItem('currentUser');
     document.cookie = 'currentUser=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
   }
@@ -55,16 +56,23 @@ export const useChatStore = create<ChatState>()(
       lastActiveChatId: loadLastActiveChatId(),
       setCurrentUser: async (user: User) => {
         try {
-          saveUserToStorage(user);
-          const cleanup = await updateUserStatus(user);
-          set({ currentUser: user });
-          
-          // Handle cleanup when component unmounts
-          window.addEventListener('beforeunload', cleanup);
-          return () => {
-            cleanup();
-            window.removeEventListener('beforeunload', cleanup);
-          };
+          // Only save valid users
+          if (user && user.id) {
+            saveUserToStorage(user);
+            const cleanup = await updateUserStatus(user);
+            set({ currentUser: user });
+            
+            // Handle cleanup when component unmounts
+            window.addEventListener('beforeunload', cleanup);
+            return () => {
+              cleanup();
+              window.removeEventListener('beforeunload', cleanup);
+            };
+          } else {
+            // Clear storage for invalid users
+            saveUserToStorage(null);
+            set({ currentUser: null });
+          }
         } catch (error) {
           console.error('Error updating user status:', error);
           set({ currentUser: user });

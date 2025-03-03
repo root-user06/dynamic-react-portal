@@ -1,9 +1,12 @@
+
 import { createBrowserRouter } from "react-router-dom";
 import Chat from "./pages/Chat";
-import Index from "./pages/Index";
+import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
-import Landing from "./pages/landing";
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -11,26 +14,46 @@ export const router = createBrowserRouter([
   },
   {
     path: "/auth/signup",
-    element: <Index />,
+    element: (
+      <ProtectedRoute requireAuth={false}>
+        <Signup />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/auth/login",
-    element: <Login />,
+    element: (
+      <ProtectedRoute requireAuth={false}>
+        <Login />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/chat",
-    element: <Chat />,
+    element: (
+      <ProtectedRoute requireAuth={true}>
+        <Chat />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/chat/:id",
-    element: <Chat />,
+    element: (
+      <ProtectedRoute requireAuth={true}>
+        <Chat />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/chat/profile",
-    element: <Chat />,
+    element: (
+      <ProtectedRoute requireAuth={true}>
+        <Chat />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "*",
     element: <NotFound />,
-  },
+  }
 ]);

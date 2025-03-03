@@ -140,11 +140,11 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
                   )}
                   <div className={`group relative rounded-2xl px-4 py-2 ${
                     isSender
-                      ? 'bg-purple-600 text-white rounded-br-none'
+                      ? 'bg-[#46C8B6] text-white rounded-br-none'
                       : 'bg-white text-gray-900 rounded-bl-none shadow-sm'
                   }`}>
                     <p className="break-words text-sm">{message.content}</p>
-                    <div className={`text-[10px] ${isSender ? 'text-purple-200' : 'text-gray-500'} mt-1`}>
+                    <div className={`text-[10px] ${isSender ? 'text-black' : 'text-black'} mt-1`}>
                       {new Date(message.timestamp).toLocaleTimeString([], { 
                         hour: '2-digit', 
                         minute: '2-digit' 
@@ -173,7 +173,7 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
             type="submit" 
             size="icon"
             disabled={!newMessage.trim()}
-            className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-10 h-10 flex items-center justify-center"
+            className="bg-[#46C8A1] hover:bg-purple-700 text-white rounded-full w-10 h-10 flex items-center justify-center"
           >
             <Send className="w-5 h-5" />
           </Button>

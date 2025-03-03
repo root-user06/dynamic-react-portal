@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
+import Loader from '@/components/Loader';
 
 // Demo messages for the animated chat
 const demoMessages = [
@@ -62,7 +63,7 @@ const Landing: React.FC = () => {
     }
   }, [visibleMessages]);
 
-  return (
+   return (
     <div className="min-h-screen flex flex-col bg-[#ddecec] text-white overflow-hidden">
       {/* Logo Section */}
       <div className="flex-1 flex flex-col items-center justify-between">

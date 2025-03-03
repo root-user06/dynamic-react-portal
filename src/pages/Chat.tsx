@@ -81,7 +81,7 @@ const Chat = () => {
 
   const renderBottomNavigation = () => (
     <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white">
-      <div className="flex items-center justify-around py-2">
+      <div className="flex items-center justify-around ">
         <button
           onClick={() => handleTabChange('chats')}
           className={`flex flex-col items-center p-2 ${
