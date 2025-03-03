@@ -8,6 +8,8 @@ import { updateUserStatus } from '@/lib/firebase';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { User, MessageCircle } from 'lucide-react';
+import CallDialog from '@/components/CallDialog';
+import CallController from '@/components/CallController';
 
 const Chat = () => {
   const { currentUser, selectedUser, setSelectedUser } = useChatStore();
@@ -75,10 +77,6 @@ const Chat = () => {
     }
   };
 
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
-
   const renderBottomNavigation = () => (
     <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white">
       <div className="flex items-center justify-around ">
@@ -107,6 +105,12 @@ const Chat = () => {
   if (isMobile) {
     return (
       <div className="h-screen bg-white flex flex-col">
+        {/* Call Controller (invisible component) */}
+        <CallController />
+        
+        {/* Call Dialog */}
+        <CallDialog />
+        
         {selectedUser ? (
           <ChatWindow 
             showBackButton={true} 
@@ -138,6 +142,12 @@ const Chat = () => {
 
   return (
     <div className="h-screen bg-[#ddecec] relative overflow-hidden">
+      {/* Call Controller (invisible component) */}
+      <CallController />
+      
+      {/* Call Dialog */}
+      <CallDialog />
+      
       <div className="flex h-full">
         <div className="w-80 border-r border-gray-200">
           <UserList onChatSelect={setSelectedUser} />

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Send, MoreVertical, Phone, Video, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
+import { useCallStore } from '@/server/callStore';
 
 interface ChatWindowProps {
   showBackButton?: boolean;
@@ -16,6 +17,7 @@ interface ChatWindowProps {
 const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState('');
   const { messages, currentUser, selectedUser, addMessage } = useChatStore();
+  const { setOutgoingCall } = useCallStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
@@ -48,6 +50,29 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
       };
       addMessage(message);
       setNewMessage('');
+    }
+  };
+
+  // Handle initiating calls
+  const handleCall = async (callType: 'audio' | 'video') => {
+    if (!selectedUser || !currentUser) return;
+    
+    try {
+      // Use the global initiateCall function exposed by CallController
+      const callId = await (window as any).initiateCall(selectedUser, callType);
+      
+      // Update call state to show outgoing call interface
+      setOutgoingCall(true, {
+        callId,
+        callerId: currentUser.id,
+        callerName: currentUser.name,
+        receiverId: selectedUser.id,
+        callType,
+        timestamp: new Date().toISOString(),
+        status: 'pending'
+      });
+    } catch (error) {
+      console.error(`Error starting ${callType} call:`, error);
     }
   };
 
@@ -97,10 +122,20 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="icon" className="text-purple-600">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-purple-600"
+                onClick={() => handleCall('audio')}
+              >
                 <Phone className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-purple-600">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-purple-600"
+                onClick={() => handleCall('video')}
+              >
                 <Video className="h-5 w-5" />
               </Button>
               <Button variant="ghost" size="icon" className="text-gray-600">
