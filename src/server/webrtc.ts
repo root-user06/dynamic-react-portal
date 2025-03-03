@@ -5,7 +5,7 @@ import { database } from '@/lib/firebase';
 import { ref, set, onValue, remove } from 'firebase/database';
 import { User } from '@/lib/types';
 
-// Configure STUN servers
+// Configure STUN servers for optimal connection
 const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -138,17 +138,25 @@ class WebRTCService {
     this.onCallEndedCallback = callback;
   }
 
-  // Start a call to another user
+  // Start a call to another user with optimized media settings
   async startCall(receiver: User, callType: 'audio' | 'video'): Promise<string> {
     if (!this.peer || !this.currentUser) {
       throw new Error('WebRTC not initialized');
     }
 
     try {
-      // Get media stream based on call type
+      // Get media stream based on call type with optimized settings
       const constraints = {
-        audio: true,
-        video: callType === 'video'
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        },
+        video: callType === 'video' ? {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        } : false
       };
 
       this.myStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -195,10 +203,19 @@ class WebRTCService {
     }
 
     try {
-      // Get media stream
+      // Get media stream with optimized settings
+      const callType = this.currentCall.metadata?.callType || 'audio';
       const constraints = {
-        audio: true,
-        video: this.currentCall.metadata?.callType === 'video'
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        },
+        video: callType === 'video' ? {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        } : false
       };
 
       this.myStream = await navigator.mediaDevices.getUserMedia(constraints);

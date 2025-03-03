@@ -51,6 +51,10 @@ const CallController = () => {
         // Update call state
         setIncomingCall(true, callData);
         
+        // Play notification sound
+        const audio = new Audio('/sounds/incoming-call.mp3');
+        audio.play().catch(err => console.error('Error playing notification sound:', err));
+        
         // Show toast notification with action buttons
         toast({
           title: `Incoming ${callData.callType} call`,
@@ -135,7 +139,7 @@ const CallController = () => {
     if (!currentUser) return;
     
     try {
-      // Start the call
+      // Start the call - only request video for video calls
       const callId = await webRTCService.startCall(receiver, callType);
       
       // Get local stream and update state
@@ -157,6 +161,11 @@ const CallController = () => {
       // Update call state
       setRemoteUser(receiver);
       setOutgoingCall(true, callData);
+      
+      // Play outgoing call sound
+      const audio = new Audio('/sounds/outgoing-call.mp3');
+      audio.loop = true;
+      audio.play().catch(err => console.error('Error playing outgoing call sound:', err));
       
       // Send notification
       await notificationService.sendCallNotification(
