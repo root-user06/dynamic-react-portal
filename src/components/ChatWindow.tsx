@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '@/lib/store';
 import { Message } from '@/lib/types';
@@ -54,15 +53,12 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
     }
   };
 
-  // Handle initiating calls
   const handleCall = async (callType: 'audio' | 'video') => {
     if (!selectedUser || !currentUser) return;
     
     try {
-      // Use the global initiateCall function exposed by CallController
       const callId = await (window as any).initiateCall(selectedUser, callType);
       
-      // Update call state to show outgoing call interface
       setOutgoingCall(true, {
         callId,
         callerId: currentUser.id,
@@ -92,7 +88,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
 
   return (
     <div className="flex flex-col h-full bg-gray-50 select-none">
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
         <div className="p-4">
           <div className="flex items-center justify-between">
@@ -152,7 +147,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
         </div>
       </div>
 
-      {/* Messages */}
       <div 
         ref={messageContainerRef}
         className="flex-1 overflow-y-auto p-4 space-y-4"
@@ -200,7 +194,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
         <div ref={messagesEndRef} />
       </div>
       
-      {/* Message Input */}
       <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
         <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
           <Input

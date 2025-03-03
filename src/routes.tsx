@@ -6,6 +6,9 @@ import NotFound from "./pages/NotFound";
 import Landing from "./pages/Landing";
 import Login from "./pages/login"; // Fixed casing to match the actual file name
 import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
+import UserList from "./pages/UserList";
+import Profile from "./pages/Profile";
 
 export const router = createBrowserRouter([
   {
@@ -29,28 +32,30 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/chat",
+    path: "/",
     element: (
       <ProtectedRoute requireAuth={true}>
-        <Chat />
+        <Layout />
       </ProtectedRoute>
     ),
-  },
-  {
-    path: "/chat/:id",
-    element: (
-      <ProtectedRoute requireAuth={true}>
-        <Chat />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/chat/profile",
-    element: (
-      <ProtectedRoute requireAuth={true}>
-        <Chat />
-      </ProtectedRoute>
-    ),
+    children: [
+      {
+        path: "chat",
+        element: <Chat />,
+      },
+      {
+        path: "chat/:id",
+        element: <Chat />,
+      },
+      {
+        path: "userlist",
+        element: <UserList />,
+      },
+      {
+        path: "profile",
+        element: <Profile />,
+      },
+    ],
   },
   {
     path: "*",
