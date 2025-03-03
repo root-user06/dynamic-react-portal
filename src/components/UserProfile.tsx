@@ -111,14 +111,14 @@ const UserProfile = ({ user, showBackButton, onBack }: UserProfileProps) => {
   };
 
   return (
-    <div className="h-full bg-white">
+    <div className="h-full bg-white select-none">
       {showBackButton && (
         <div className="p-4 border-b border-gray-200">
           <Button
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="md:hidden -ml-2"
+            className="-ml-2"
           >
             <ChevronLeft className="h-6 w-6" />
           </Button>
@@ -206,7 +206,12 @@ const UserProfile = ({ user, showBackButton, onBack }: UserProfileProps) => {
                   >
                     Cancel
                   </Button>
-                  <Button onClick={handleSave}>Save Changes</Button>
+                  <Button 
+                    onClick={handleSave}
+                    className="bg-[#46C8B6] hover:bg-[#3baa9b]"
+                  >
+                    Save Changes
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -225,8 +230,7 @@ const UserProfile = ({ user, showBackButton, onBack }: UserProfileProps) => {
                 </div>
                 
                 <Button 
-                  className="w-full" 
-                  variant="outline"
+                  className="w-full bg-[#46C8B6] hover:bg-[#3baa9b] text-white" 
                   onClick={() => setIsEditing(true)}
                 >
                   Edit Profile

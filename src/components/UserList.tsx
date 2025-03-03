@@ -2,7 +2,7 @@
 import { useChatStore } from '@/lib/store';
 import { Message, User } from '@/lib/types';
 import { Search } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Input } from './ui/input';
 import { useNavigate } from 'react-router-dom';
 interface UserListProps {
@@ -58,7 +58,7 @@ const UserList = ({ onChatSelect }: UserListProps) => {
     });
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background select-none">
       <div className="p-4 border-b border-border">
         <div className="flex items-center">
           <img 
@@ -148,7 +148,7 @@ const UserList = ({ onChatSelect }: UserListProps) => {
                   )}
                 </div>
                 {unreadCount > 0 && (
-                  <div className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-[#46C8B6] text-white text-xs flex items-center justify-center">
                     {unreadCount}
                   </div>
                 )}

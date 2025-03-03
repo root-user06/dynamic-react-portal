@@ -12,9 +12,10 @@ import { useCallStore } from '@/server/callStore';
 interface ChatWindowProps {
   showBackButton?: boolean;
   onBack?: () => void;
+  onViewProfile?: () => void;
 }
 
-const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
+const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState('');
   const { messages, currentUser, selectedUser, addMessage } = useChatStore();
   const { setOutgoingCall } = useCallStore();
@@ -90,7 +91,7 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
   );
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50 select-none">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
         <div className="p-4">
@@ -101,7 +102,7 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
                   variant="ghost"
                   size="icon"
                   onClick={onBack}
-                  className="md:hidden -ml-2"
+                  className="-ml-2"
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
@@ -125,7 +126,7 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-purple-600"
+                className="text-[#46C8B6]"
                 onClick={() => handleCall('audio')}
               >
                 <Phone className="h-5 w-5" />
@@ -133,12 +134,17 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-purple-600"
+                className="text-[#46C8B6]"
                 onClick={() => handleCall('video')}
               >
                 <Video className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-gray-600">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-gray-600"
+                onClick={onViewProfile}
+              >
                 <MoreVertical className="h-5 w-5" />
               </Button>
             </div>
@@ -208,7 +214,7 @@ const ChatWindow = ({ showBackButton, onBack }: ChatWindowProps) => {
             type="submit" 
             size="icon"
             disabled={!newMessage.trim()}
-            className="bg-[#46C8A1] hover:bg-purple-700 text-white rounded-full w-10 h-10 flex items-center justify-center"
+            className="bg-[#46C8B6] hover:bg-[#3baa9b] text-white rounded-full w-10 h-10 flex items-center justify-center"
           >
             <Send className="w-5 h-5" />
           </Button>
