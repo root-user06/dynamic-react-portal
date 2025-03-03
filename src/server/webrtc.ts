@@ -29,13 +29,13 @@ export interface CallData {
 export interface PeerConnection {
   peer: Peer;
   stream: MediaStream | null;
-  call: Peer.MediaConnection | null;
+  call: any | null; // Changed from Peer.MediaConnection to any
 }
 
 class WebRTCService {
   private peer: Peer | null = null;
   private myStream: MediaStream | null = null;
-  private currentCall: Peer.MediaConnection | null = null;
+  private currentCall: any | null = null; // Changed from Peer.MediaConnection to any
   private currentUser: User | null = null;
   private onIncomingCallCallback: ((callData: CallData) => void) | null = null;
   private onCallAcceptedCallback: ((stream: MediaStream) => void) | null = null;
@@ -322,7 +322,7 @@ class WebRTCService {
   }
 
   // Set up event handlers for a call
-  private setupCallEventHandlers(call: Peer.MediaConnection): void {
+  private setupCallEventHandlers(call: any): void { // Changed from Peer.MediaConnection to any
     call.on('stream', (remoteStream) => {
       console.log('Received remote stream');
       if (this.onCallAcceptedCallback) {

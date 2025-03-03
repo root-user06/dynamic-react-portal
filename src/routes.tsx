@@ -4,7 +4,7 @@ import Chat from "./pages/Chat";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import Landing from "./pages/Landing";
-import Login from "./pages/Login";
+import Login from "./pages/login"; // Fixed casing to match the actual file name
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export const router = createBrowserRouter([
