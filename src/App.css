@@ -100,6 +100,7 @@
 }
 
 /* Call styles */
+/* Updated call styles for better mobile UI */
 .call-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -174,7 +175,7 @@
 
 /* Pulse for incoming call */
 .pulse-ring {
-  border: 3px solid #46C8B6;
+  border: 3px solid #fff;
   border-radius: 50%;
   height: 100%;
   width: 100%;
@@ -197,4 +198,118 @@
     transform: scale(0.95);
     opacity: 1;
   }
+}
+
+/* Mobile-specific call dialog */
+.mobile-call-dialog {
+  margin: 0;
+  max-width: 100% !important;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+}
+
+@media (max-width: 640px) {
+  .mobile-call-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100vh;
+    max-height: none;
+    transform: translate(0, 0);
+  }
+}
+
+/* Call notification styles */
+.call-notification {
+  position: fixed;
+  top: 20px;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  animation: slide-down 0.3s ease-out forwards;
+}
+
+.call-notification-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 12px;
+}
+
+.call-notification-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Call message styles */
+.call-message {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f3f4f6;
+  border-radius: 16px;
+  margin: 8px 0;
+  max-width: 80%;
+}
+
+.call-message-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.missed-call {
+  color: #ef4444;
+}
+
+.video-call {
+  color: #3b82f6;
+}
+
+.audio-call {
+  color: #10b981;
+}
+
+.call-message-text {
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.call-message-action {
+  font-weight: 500;
+  color: #4f46e5;
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+.call-message-action:hover {
+  text-decoration: underline;
 }
