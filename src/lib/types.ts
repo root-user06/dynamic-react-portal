@@ -15,6 +15,8 @@ export interface Message {
   content: string;
   timestamp: string;
   isRead: boolean;
+  callType?: 'audio' | 'video'; // Optional property for call messages
+  callStatus?: 'started' | 'ended' | 'missed' | 'outgoing' | 'incoming'; // Optional property for call status
 }
 
 export interface ChatState {

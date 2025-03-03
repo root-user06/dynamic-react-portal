@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent } from './ui/dialog';
 import { Button } from './ui/button';
@@ -29,28 +28,24 @@ const CallDialog = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
 
-  // Determine if the dialog should be open
   const isOpen = isIncomingCall || isOngoingCall || isOutgoingCall;
   const isVideoCall = currentCallData?.callType === 'video';
 
-  // Get remote user (either the caller or the called user)
   const remoteUser = selectedUser || 
     (currentCallData?.callerId !== currentUser?.id ? 
-      { id: currentCallData?.callerId || '', name: currentCallData?.callerName || '' } : 
-      { id: currentCallData?.receiverId || '', name: 'User' });
+      { id: currentCallData?.callerId || '', name: currentCallData?.callerName || '', photoURL: undefined } : 
+      { id: currentCallData?.receiverId || '', name: 'User', photoURL: undefined });
 
-  // Get the call background gradient based on call type
   const getCallBackground = () => {
     if (isVideoCall && remoteStream) {
-      return 'bg-gray-900'; // Video will be shown as background
+      return 'bg-gray-900';
     } else if (isIncomingCall || isOutgoingCall) {
-      return 'bg-gradient-to-b from-purple-400 to-indigo-600'; // Purple gradient for incoming/outgoing calls
+      return 'bg-gradient-to-b from-purple-400 to-indigo-600';
     } else {
-      return 'bg-gradient-to-b from-teal-400 to-cyan-600'; // Teal gradient for ongoing calls
+      return 'bg-gradient-to-b from-teal-400 to-cyan-600';
     }
   };
 
-  // Play or pause call sounds based on call state
   useEffect(() => {
     if (incomingCallSoundRef.current && outgoingCallSoundRef.current) {
       if (isIncomingCall) {
@@ -75,7 +70,6 @@ const CallDialog = () => {
     };
   }, [isIncomingCall, isOutgoingCall, isOngoingCall]);
 
-  // Set up streams for video elements
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
@@ -86,7 +80,6 @@ const CallDialog = () => {
     }
   }, [localStream, remoteStream]);
 
-  // Handle call acceptance
   const handleAcceptCall = async () => {
     try {
       await webRTCService.acceptCall();
@@ -95,7 +88,6 @@ const CallDialog = () => {
     }
   };
 
-  // Handle call rejection
   const handleRejectCall = async () => {
     try {
       await webRTCService.rejectCall();
@@ -105,7 +97,6 @@ const CallDialog = () => {
     }
   };
 
-  // Handle call end
   const handleEndCall = async () => {
     try {
       await webRTCService.endCall();
@@ -115,7 +106,6 @@ const CallDialog = () => {
     }
   };
 
-  // Toggle mute
   const toggleMute = () => {
     if (localStream) {
       const audioTracks = localStream.getAudioTracks();
@@ -126,7 +116,6 @@ const CallDialog = () => {
     }
   };
 
-  // Toggle video
   const toggleVideo = () => {
     if (localStream) {
       const videoTracks = localStream.getVideoTracks();
@@ -137,7 +126,6 @@ const CallDialog = () => {
     }
   };
 
-  // Determine the dialog title based on call state
   const getCallStatus = () => {
     if (isIncomingCall) {
       return `${currentCallData?.callType === 'video' ? 'Video' : 'Audio'} call from ${currentCallData?.callerName}`;
@@ -149,7 +137,6 @@ const CallDialog = () => {
     return '';
   };
 
-  // Render incoming call UI (similar to the 4th reference image)
   const renderIncomingCall = () => (
     <div className="flex flex-col h-full items-center justify-between p-4">
       <div className="flex flex-col items-center mt-12 space-y-4">
@@ -185,7 +172,6 @@ const CallDialog = () => {
     </div>
   );
 
-  // Render outgoing call UI (similar to the 1st reference image)
   const renderOutgoingCall = () => (
     <div className="flex flex-col h-full items-center justify-between p-4">
       <div className="flex items-center justify-between w-full pt-4">
@@ -242,7 +228,6 @@ const CallDialog = () => {
     </div>
   );
 
-  // Render ongoing video call UI (similar to the 5th reference image)
   const renderOngoingVideoCall = () => (
     <div className="relative flex flex-col h-full">
       <div className="absolute inset-0">
@@ -303,7 +288,6 @@ const CallDialog = () => {
     </div>
   );
 
-  // Render ongoing audio call UI
   const renderOngoingAudioCall = () => (
     <div className="flex flex-col h-full items-center justify-between p-4">
       <div className="flex items-center justify-between w-full pt-4">
@@ -352,7 +336,6 @@ const CallDialog = () => {
 
   return (
     <>
-      {/* Hidden audio elements for call sounds */}
       <audio ref={incomingCallSoundRef} src="/sounds/incoming-call.mp3" />
       <audio ref={outgoingCallSoundRef} src="/sounds/outgoing-call.mp3" />
       
