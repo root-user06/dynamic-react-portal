@@ -1,8 +1,8 @@
 
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { initializeApp } from 'firebase/app';
-import { User } from '@/lib/types';
-import { database } from '@/lib/firebase';
+import { User } from './lib/types';
+import { database } from './lib/firebase';
 import { ref, set, get } from 'firebase/database';
 
 // Re-use the same Firebase config from firebase.ts

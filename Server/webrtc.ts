@@ -1,9 +1,9 @@
 
 import Peer from 'peerjs';
 import { v4 as uuidv4 } from 'uuid';
-import { database } from '@/lib/firebase';
+import { database } from './lib/firebase';
 import { ref, set, onValue, remove } from 'firebase/database';
-import { User } from '@/lib/types';
+import { User } from './lib/types';
 
 // Configure STUN servers for optimal connection
 const ICE_SERVERS = {
