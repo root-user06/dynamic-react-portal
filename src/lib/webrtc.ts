@@ -1,45 +1,31 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { database } from './firebase';
+import { ref, set, onValue, update, get, push, onChildAdded } from 'firebase/database';
 import { CallData } from './callStore';
 import { User } from './types';
+import notificationService from './notifications';
 
 class WebRTCService {
   peer: any = null;
   localStream: MediaStream | null = null;
+  remoteStream: MediaStream | null = null;
   currentCall: any = null;
   currentUser: User | null = null;
+  peerConnection: RTCPeerConnection | null = null;
+  dataChannel: RTCDataChannel | null = null;
+  
   onIncomingCallCallback: ((callData: CallData) => void) | null = null;
   onCallAcceptedCallback: ((stream: MediaStream) => void) | null = null;
   onCallEndedCallback: (() => void) | null = null;
-  sounds: {[key: string]: HTMLAudioElement} = {};
+  
+  iceServers = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' }
+  ];
 
   constructor() {
-    // Pre-load sounds
-    this.loadSounds();
-  }
-
-  loadSounds() {
-    // Load sound files
-    try {
-      const incomingCallSound = new Audio('/sounds/incomming-call.mp3');
-      const outgoingCallSound = new Audio('/sounds/Ringing.mp3');
-      
-      // Cache the audio elements
-      this.sounds['incoming-call'] = incomingCallSound;
-      this.sounds['outgoing-call'] = outgoingCallSound;
-      
-      // Preload the audio files
-      incomingCallSound.load();
-      outgoingCallSound.load();
-      
-      console.log('Call sounds loaded successfully');
-    } catch (error) {
-      console.error('Error loading sounds:', error);
-    }
-  }
-
-  getSound(name: string): HTMLAudioElement | null {
-    return this.sounds[name] || null;
+    // Pre-load any required resources
   }
 
   async initialize(user: User): Promise<void> {
@@ -47,63 +33,50 @@ class WebRTCService {
     console.log('WebRTC service initialized for user:', user.id);
     
     try {
-      // Set up realtime subscription for call events
-      const channel = supabase
-        .channel('call-events')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'calls',
-            filter: `receiver_id=eq.${user.id}`,
-          },
-          (payload) => {
-            console.log('New call received via Supabase:', payload);
-            const callData = payload.new as any;
-            
-            // Only handle new pending calls for this user
-            if (callData.status === 'pending' && callData.receiver_id === user.id) {
-              this.handleIncomingCall({
-                callId: callData.call_id,
-                callerId: callData.caller_id,
-                callerName: callData.caller_name,
-                receiverId: callData.receiver_id,
-                callType: callData.call_type,
-                timestamp: callData.timestamp,
-                status: callData.status
-              });
-            }
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'calls',
-          },
-          (payload) => {
-            console.log('Call status updated:', payload);
-            const callData = payload.new as any;
-            
-            // Handle call status changes
-            if (this.currentCall && this.currentCall.callId === callData.call_id) {
-              if (callData.status === 'accepted') {
-                this.handleCallAccepted();
-              } else if (callData.status === 'rejected' || callData.status === 'ended') {
-                this.handleCallEnded();
-              }
-            }
-          }
-        )
-        .subscribe();
+      // Set up realtime subscription for call events in Firebase
+      const callsRef = ref(database, 'calls');
+      
+      // Listen for new calls where this user is the receiver
+      onChildAdded(callsRef, (snapshot) => {
+        const callData = snapshot.val();
+        if (callData && callData.receiverId === user.id && callData.status === 'pending') {
+          console.log('New call received via Firebase:', callData);
+          this.handleIncomingCall({
+            callId: callData.callId,
+            callerId: callData.callerId,
+            callerName: callData.callerName,
+            receiverId: callData.receiverId,
+            callType: callData.callType,
+            timestamp: callData.timestamp,
+            status: callData.status
+          });
+        }
+      });
+      
+      // Listen for changes on current call if any
+      this.subscribeToCallUpdates();
       
       console.log('Subscribed to call events for user:', user.id);
     } catch (error) {
       console.error('Error initializing WebRTC service:', error);
       throw error;
     }
+  }
+  
+  private subscribeToCallUpdates(): void {
+    if (!this.currentCall) return;
+    
+    const callRef = ref(database, `calls/${this.currentCall.callId}`);
+    onValue(callRef, (snapshot) => {
+      const callData = snapshot.val();
+      if (!callData) return;
+      
+      if (callData.status === 'accepted' && this.currentCall.status === 'pending') {
+        this.handleCallAccepted(callData);
+      } else if (callData.status === 'rejected' || callData.status === 'ended') {
+        this.handleCallEnded();
+      }
+    });
   }
 
   async startCall(receiver: User, callType: 'audio' | 'video'): Promise<string> {
@@ -122,6 +95,9 @@ class WebRTCService {
       
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
       
+      // Create peer connection
+      this.setupPeerConnection();
+      
       // Generate a unique call ID
       const callId = `call-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
@@ -136,31 +112,80 @@ class WebRTCService {
         status: 'pending'
       };
       
-      // Save call to Supabase
-      const { error } = await supabase.from('calls').insert({
-        call_id: callId,
-        caller_id: this.currentUser.id,
-        caller_name: this.currentUser.name,
-        receiver_id: receiver.id,
-        call_type: callType,
-        status: 'pending'
-      });
+      // Save call to Firebase
+      const callRef = ref(database, `calls/${callId}`);
+      await set(callRef, callData);
       
-      if (error) {
-        console.error('Error saving call to Supabase:', error);
-        throw error;
+      // Play outgoing call sound
+      const outgoingCallSound = notificationService.getSound('outgoing-call');
+      if (outgoingCallSound) {
+        outgoingCallSound.loop = true;
+        outgoingCallSound.play().catch(err => {
+          console.warn('Could not play outgoing call sound:', err);
+        });
       }
       
       // Store the current call
-      this.currentCall = {
-        callId,
-        peer: receiver.id,
-        metadata: callData
-      };
+      this.currentCall = callData;
+      
+      // Send a call notification
+      await notificationService.sendCallNotification(
+        this.currentUser.id,
+        receiver.id,
+        callType,
+        callId
+      );
+      
+      // Subscribe to updates on this call
+      this.subscribeToCallUpdates();
       
       return callId;
     } catch (error) {
       console.error('Error starting call:', error);
+      throw error;
+    }
+  }
+  
+  private setupPeerConnection(): void {
+    try {
+      // Create RTCPeerConnection
+      this.peerConnection = new RTCPeerConnection({
+        iceServers: this.iceServers
+      });
+      
+      // Add tracks from local stream to peer connection
+      if (this.localStream) {
+        this.localStream.getTracks().forEach(track => {
+          this.peerConnection?.addTrack(track, this.localStream!);
+        });
+      }
+      
+      // Set up remote stream
+      this.remoteStream = new MediaStream();
+      
+      // Listen for remote tracks
+      this.peerConnection.ontrack = (event) => {
+        event.streams[0].getTracks().forEach(track => {
+          this.remoteStream?.addTrack(track);
+        });
+        
+        if (this.onCallAcceptedCallback && this.remoteStream) {
+          this.onCallAcceptedCallback(this.remoteStream);
+        }
+      };
+      
+      // Handle ICE candidates
+      this.peerConnection.onicecandidate = (event) => {
+        if (event.candidate && this.currentCall) {
+          // Store the ICE candidate in Firebase
+          const candidateRef = push(ref(database, `calls/${this.currentCall.callId}/candidates/${this.currentUser?.id}`));
+          set(candidateRef, event.candidate.toJSON());
+        }
+      };
+      
+      console.log('Peer connection set up successfully');
+    } catch (error) {
+      console.error('Error setting up peer connection:', error);
       throw error;
     }
   }
@@ -174,19 +199,18 @@ class WebRTCService {
     }
     
     try {
-      // Update call status in Supabase
-      const { error } = await supabase
-        .from('calls')
-        .update({ status: 'accepted' })
-        .eq('call_id', this.currentCall.callId);
-      
-      if (error) {
-        console.error('Error accepting call:', error);
-        throw error;
+      // Stop incoming call sound
+      const incomingCallSound = notificationService.getSound('incoming-call');
+      if (incomingCallSound) {
+        incomingCallSound.pause();
+        incomingCallSound.currentTime = 0;
       }
       
-      // Set up local media stream based on call type
-      const callType = this.currentCall.metadata.callType;
+      // Set up peer connection
+      this.setupPeerConnection();
+      
+      // Get local media based on call type
+      const callType = this.currentCall.callType;
       const constraints = {
         audio: true,
         video: callType === 'video'
@@ -194,24 +218,60 @@ class WebRTCService {
       
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
       
-      // In a real implementation, you would set up WebRTC peer connection here
-      // For the demo, we'll simulate a remote stream
-      const remoteStream = new MediaStream();
+      // Update call status in Firebase
+      const callRef = ref(database, `calls/${this.currentCall.callId}`);
+      await update(callRef, { status: 'accepted' });
       
-      // Add tracks from local stream to simulate remote stream
-      // In a real implementation, these would come from the remote peer
-      this.localStream.getTracks().forEach(track => {
-        remoteStream.addTrack(track.clone());
-      });
+      // Subscribe to ICE candidates from the caller
+      this.listenForRemoteCandidates();
       
-      // Trigger the call accepted callback with the remote stream
-      if (this.onCallAcceptedCallback) {
-        this.onCallAcceptedCallback(remoteStream);
+      // Create answer
+      if (this.peerConnection) {
+        // Add tracks to peer connection
+        this.localStream.getTracks().forEach(track => {
+          this.peerConnection?.addTrack(track, this.localStream!);
+        });
+        
+        // Create and set local description (answer)
+        const answer = await this.peerConnection.createAnswer();
+        await this.peerConnection.setLocalDescription(answer);
+        
+        // Store the answer in Firebase
+        await update(ref(database, `calls/${this.currentCall.callId}`), {
+          answer: {
+            type: answer.type,
+            sdp: answer.sdp
+          }
+        });
+        
+        console.log('Call accepted and answer created');
       }
     } catch (error) {
       console.error('Error accepting call:', error);
       throw error;
     }
+  }
+  
+  private listenForRemoteCandidates(): void {
+    if (!this.currentCall || !this.currentUser) return;
+    
+    const remotePeerId = this.currentCall.callerId === this.currentUser.id 
+      ? this.currentCall.receiverId 
+      : this.currentCall.callerId;
+    
+    const candidatesRef = ref(database, `calls/${this.currentCall.callId}/candidates/${remotePeerId}`);
+    
+    onChildAdded(candidatesRef, async (snapshot) => {
+      if (this.peerConnection && this.peerConnection.remoteDescription) {
+        const candidate = new RTCIceCandidate(snapshot.val());
+        try {
+          await this.peerConnection.addIceCandidate(candidate);
+          console.log('Added remote ICE candidate');
+        } catch (error) {
+          console.error('Error adding received ICE candidate:', error);
+        }
+      }
+    });
   }
 
   async rejectCall(): Promise<void> {
@@ -223,16 +283,16 @@ class WebRTCService {
     }
     
     try {
-      // Update call status in Supabase
-      const { error } = await supabase
-        .from('calls')
-        .update({ status: 'rejected' })
-        .eq('call_id', this.currentCall.callId);
-      
-      if (error) {
-        console.error('Error rejecting call:', error);
-        throw error;
+      // Stop incoming call sound
+      const incomingCallSound = notificationService.getSound('incoming-call');
+      if (incomingCallSound) {
+        incomingCallSound.pause();
+        incomingCallSound.currentTime = 0;
       }
+      
+      // Update call status in Firebase
+      const callRef = ref(database, `calls/${this.currentCall.callId}`);
+      await update(callRef, { status: 'rejected' });
       
       // Trigger the call ended callback
       if (this.onCallEndedCallback) {
@@ -256,16 +316,22 @@ class WebRTCService {
     }
     
     try {
-      // Update call status in Supabase
-      const { error } = await supabase
-        .from('calls')
-        .update({ status: 'ended' })
-        .eq('call_id', this.currentCall.callId);
-      
-      if (error) {
-        console.error('Error ending call:', error);
-        throw error;
+      // Stop any playing sounds
+      const incomingCallSound = notificationService.getSound('incoming-call');
+      if (incomingCallSound) {
+        incomingCallSound.pause();
+        incomingCallSound.currentTime = 0;
       }
+      
+      const outgoingCallSound = notificationService.getSound('outgoing-call');
+      if (outgoingCallSound) {
+        outgoingCallSound.pause();
+        outgoingCallSound.currentTime = 0;
+      }
+      
+      // Update call status in Firebase
+      const callRef = ref(database, `calls/${this.currentCall.callId}`);
+      await update(callRef, { status: 'ended' });
       
       // Trigger the call ended callback
       if (this.onCallEndedCallback) {
@@ -296,11 +362,16 @@ class WebRTCService {
     console.log('Handling incoming call:', callData);
     
     // Store the current call
-    this.currentCall = {
-      callId: callData.callId,
-      peer: callData.callerId,
-      metadata: callData
-    };
+    this.currentCall = callData;
+    
+    // Trigger the incoming call sound
+    const incomingCallSound = notificationService.getSound('incoming-call');
+    if (incomingCallSound) {
+      incomingCallSound.loop = true;
+      incomingCallSound.play().catch(err => {
+        console.warn('Could not play notification sound:', err);
+      });
+    }
     
     // Trigger the incoming call callback
     if (this.onIncomingCallCallback) {
@@ -308,34 +379,50 @@ class WebRTCService {
     }
   }
 
-  private handleCallAccepted(): void {
-    console.log('Call accepted');
+  private async handleCallAccepted(callData: any): Promise<void> {
+    console.log('Call accepted, setting up connection');
     
-    if (!this.currentCall) {
-      console.error('No current call found');
-      return;
+    // Stop outgoing call sound
+    const outgoingCallSound = notificationService.getSound('outgoing-call');
+    if (outgoingCallSound) {
+      outgoingCallSound.pause();
+      outgoingCallSound.currentTime = 0;
     }
     
-    // In a real implementation, you would set up WebRTC peer connection here
-    // For the demo, we'll simulate a remote stream
-    if (this.localStream) {
-      const remoteStream = new MediaStream();
-      
-      // Add tracks from local stream to simulate remote stream
-      // In a real implementation, these would come from the remote peer
-      this.localStream.getTracks().forEach(track => {
-        remoteStream.addTrack(track.clone());
-      });
-      
-      // Trigger the call accepted callback with the remote stream
-      if (this.onCallAcceptedCallback) {
-        this.onCallAcceptedCallback(remoteStream);
+    try {
+      if (this.peerConnection && callData.answer) {
+        // Set remote description from the answer
+        const remoteDesc = new RTCSessionDescription({
+          type: callData.answer.type,
+          sdp: callData.answer.sdp
+        });
+        
+        await this.peerConnection.setRemoteDescription(remoteDesc);
+        console.log('Set remote description from answer');
+        
+        // Listen for ICE candidates
+        this.listenForRemoteCandidates();
       }
+    } catch (error) {
+      console.error('Error handling accepted call:', error);
     }
   }
 
   private handleCallEnded(): void {
     console.log('Call ended');
+    
+    // Stop any playing sounds
+    const incomingCallSound = notificationService.getSound('incoming-call');
+    if (incomingCallSound) {
+      incomingCallSound.pause();
+      incomingCallSound.currentTime = 0;
+    }
+    
+    const outgoingCallSound = notificationService.getSound('outgoing-call');
+    if (outgoingCallSound) {
+      outgoingCallSound.pause();
+      outgoingCallSound.currentTime = 0;
+    }
     
     // Trigger the call ended callback
     if (this.onCallEndedCallback) {
@@ -349,6 +436,12 @@ class WebRTCService {
   cleanup(): void {
     console.log('Cleaning up WebRTC resources');
     
+    // Close peer connection
+    if (this.peerConnection) {
+      this.peerConnection.close();
+      this.peerConnection = null;
+    }
+    
     // Stop local stream tracks
     if (this.localStream) {
       this.localStream.getTracks().forEach(track => {
@@ -356,6 +449,9 @@ class WebRTCService {
       });
       this.localStream = null;
     }
+    
+    // Clear remote stream
+    this.remoteStream = null;
     
     // Clear current call data
     this.currentCall = null;
@@ -365,4 +461,3 @@ class WebRTCService {
 // Create and export a singleton instance
 const webRTCService = new WebRTCService();
 export default webRTCService;
-export type { CallData };

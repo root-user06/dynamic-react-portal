@@ -1,14 +1,17 @@
 
 import { User } from './types';
-import { supabase } from '@/integrations/supabase/client';
+import { database } from './firebase';
+import { ref, get } from 'firebase/database';
 
 class NotificationService {
   private onMessageCallback: ((payload: any) => void) | null = null;
+  private sounds: {[key: string]: HTMLAudioElement} = {};
 
   constructor() {
     // Initialize notification-related functionality
     if (typeof window !== 'undefined') {
       this.setupServiceWorker();
+      this.loadSounds();
     }
   }
 
@@ -21,6 +24,29 @@ class NotificationService {
     } catch (error) {
       console.error('Error setting up service worker:', error);
     }
+  }
+
+  private loadSounds() {
+    try {
+      const incomingCallSound = new Audio('/sounds/incomming-call.mp3');
+      const outgoingCallSound = new Audio('/sounds/Ringing.mp3');
+      
+      // Cache the audio elements
+      this.sounds['incoming-call'] = incomingCallSound;
+      this.sounds['outgoing-call'] = outgoingCallSound;
+      
+      // Preload the audio files
+      incomingCallSound.load();
+      outgoingCallSound.load();
+      
+      console.log('Call sounds loaded successfully');
+    } catch (error) {
+      console.error('Error loading sounds:', error);
+    }
+  }
+
+  getSound(name: string): HTMLAudioElement | null {
+    return this.sounds[name] || null;
   }
 
   // Request permission for notifications
@@ -74,23 +100,31 @@ class NotificationService {
     callId: string
   ): Promise<void> {
     try {
-      // Get sender's info from context
-      const { data: senderData, error: senderError } = await supabase
-        .from('users')
-        .select('name')
-        .eq('id', senderId)
-        .single();
+      // Get sender's info from Firebase
+      const senderRef = ref(database, `users/${senderId}`);
+      const senderSnapshot = await get(senderRef);
       
-      if (senderError || !senderData) {
+      if (!senderSnapshot.exists()) {
         console.warn('Sender not found:', senderId);
         return;
       }
 
+      const senderData = senderSnapshot.val();
+      
       // Show a local notification
       const title = `Incoming ${callType} call`;
       const body = `${senderData.name} is calling you`;
       
       this.showNotification(title, body);
+      
+      // Play incoming call sound
+      const incomingCallSound = this.getSound('incoming-call');
+      if (incomingCallSound) {
+        incomingCallSound.loop = true;
+        incomingCallSound.play().catch(err => {
+          console.warn('Could not play notification sound:', err);
+        });
+      }
       
       console.log('Call notification sent to:', receiverId);
     } catch (error) {
