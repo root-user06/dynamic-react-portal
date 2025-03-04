@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent } from './ui/dialog';
 import { Button } from './ui/button';
@@ -8,10 +9,6 @@ import { useChatStore } from '@/lib/store';
 import { Avatar } from './ui/avatar';
 import { cn } from '@/lib/utils';
 
-// Preload sounds to avoid loading issues
-const INCOMING_CALL_SOUND = new Audio('/sounds/incoming-call.mp3');
-const OUTGOING_CALL_SOUND = new Audio('/sounds/outgoing-call.mp3');
-
 const CallDialog = () => {
   const { 
     isIncomingCall, 
@@ -20,10 +17,11 @@ const CallDialog = () => {
     currentCallData,
     remoteStream,
     localStream,
+    remoteUser,
     resetCallState
   } = useCallStore();
 
-  const { selectedUser, currentUser } = useChatStore();
+  const { currentUser } = useChatStore();
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -33,10 +31,7 @@ const CallDialog = () => {
   const isOpen = isIncomingCall || isOngoingCall || isOutgoingCall;
   const isVideoCall = currentCallData?.callType === 'video';
 
-  const remoteUser = selectedUser || 
-    (currentCallData?.callerId !== currentUser?.id ? 
-      { id: currentCallData?.callerId || '', name: currentCallData?.callerName || '', photoURL: undefined } : 
-      { id: currentCallData?.receiverId || '', name: 'User', photoURL: undefined });
+  const displayName = remoteUser?.name || currentCallData?.callerName || 'User';
 
   const getCallBackground = () => {
     if (isVideoCall && remoteStream) {
@@ -50,62 +45,21 @@ const CallDialog = () => {
     }
   };
 
-  // Play or pause call sounds based on call state
-  useEffect(() => {
-    // Preload sounds
-    INCOMING_CALL_SOUND.load();
-    OUTGOING_CALL_SOUND.load();
-    
-    if (isIncomingCall) {
-      INCOMING_CALL_SOUND.loop = true;
-      INCOMING_CALL_SOUND.play().catch(error => console.log('Error playing sound:', error));
-      OUTGOING_CALL_SOUND.pause();
-    } else if (isOutgoingCall) {
-      OUTGOING_CALL_SOUND.loop = true;
-      OUTGOING_CALL_SOUND.play().catch(error => console.log('Error playing sound:', error));
-      INCOMING_CALL_SOUND.pause();
-    } else {
-      INCOMING_CALL_SOUND.pause();
-      OUTGOING_CALL_SOUND.pause();
-    }
-
-    return () => {
-      INCOMING_CALL_SOUND.pause();
-      OUTGOING_CALL_SOUND.pause();
-    };
-  }, [isIncomingCall, isOutgoingCall, isOngoingCall]);
-
   // Handle media streams
   useEffect(() => {
-    const setupMediaStreams = async () => {
-      // Only request video if it's a video call
-      if (isVideoCall) {
-        try {
-          if (localVideoRef.current && localStream) {
-            localVideoRef.current.srcObject = localStream;
-          }
-          
-          if (remoteVideoRef.current && remoteStream) {
-            remoteVideoRef.current.srcObject = remoteStream;
-          }
-        } catch (error) {
-          console.error('Error setting up media streams:', error);
-        }
-      } else {
-        // For audio calls, we only need audio tracks
-        if (localStream) {
-          const videoTracks = localStream.getVideoTracks();
-          videoTracks.forEach(track => {
-            track.enabled = false;
-          });
-        }
-      }
-    };
+    console.log('Setting up video streams, remote stream:', !!remoteStream, 'local stream:', !!localStream);
     
-    setupMediaStreams();
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+    
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
   }, [localStream, remoteStream, isVideoCall]);
 
   const handleAcceptCall = async () => {
+    console.log('Accepting call');
     try {
       await webRTCService.acceptCall();
     } catch (error) {
@@ -114,6 +68,7 @@ const CallDialog = () => {
   };
 
   const handleRejectCall = async () => {
+    console.log('Rejecting call');
     try {
       await webRTCService.rejectCall();
       resetCallState();
@@ -123,6 +78,7 @@ const CallDialog = () => {
   };
 
   const handleEndCall = async () => {
+    console.log('Ending call');
     try {
       await webRTCService.endCall();
       resetCallState();
@@ -157,7 +113,7 @@ const CallDialog = () => {
     } else if (isOutgoingCall) {
       return `Calling...`;
     } else if (isOngoingCall) {
-      return `${remoteUser?.name || ''}`;
+      return `${displayName}`;
     }
     return '';
   };
@@ -169,14 +125,14 @@ const CallDialog = () => {
         <div className="w-32 h-32 relative">
           <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
             <img 
-              src={remoteUser?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(remoteUser?.name || 'User')}&background=random&color=fff`} 
-              alt={remoteUser?.name} 
+              src={remoteUser?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`} 
+              alt={displayName} 
               className="w-full h-full object-cover"
             />
           </Avatar>
           <div className="absolute inset-0 pulse-ring opacity-70"></div>
         </div>
-        <h2 className="text-2xl font-bold text-gray-800">{remoteUser?.name}</h2>
+        <h2 className="text-2xl font-bold text-gray-800">{displayName}</h2>
         <p className="text-gray-600">
           {currentCallData?.callType === 'video' ? 'Video call from Messenger' : 'Audio call from Messenger'}
         </p>
@@ -214,14 +170,14 @@ const CallDialog = () => {
         <div className="w-32 h-32 relative">
           <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
             <img 
-              src={remoteUser?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(remoteUser?.name || 'User')}&background=random&color=fff`} 
-              alt={remoteUser?.name} 
+              src={remoteUser?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`} 
+              alt={displayName} 
               className="w-full h-full object-cover"
             />
           </Avatar>
           <div className="absolute inset-0 pulse-ring opacity-70"></div>
         </div>
-        <h2 className="text-2xl font-bold text-gray-800">{remoteUser?.name}</h2>
+        <h2 className="text-2xl font-bold text-gray-800">{displayName}</h2>
         <p className="text-gray-600">Calling...</p>
       </div>
       
@@ -262,12 +218,14 @@ const CallDialog = () => {
   const renderOngoingVideoCall = () => (
     <div className="relative flex flex-col h-full">
       <div className="absolute inset-0 bg-black">
-        <video
-          ref={remoteVideoRef}
-          autoPlay
-          playsInline
-          className="w-full h-full object-cover"
-        />
+        {remoteStream && (
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className="w-full h-full object-cover"
+          />
+        )}
       </div>
       
       {localStream && isVideoCall && (
@@ -332,14 +290,14 @@ const CallDialog = () => {
         <div className="relative">
           <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
             <img 
-              src={remoteUser?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(remoteUser?.name || 'User')}&background=random&color=fff`} 
-              alt={remoteUser?.name} 
+              src={remoteUser?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`} 
+              alt={displayName} 
               className="w-full h-full object-cover"
             />
           </Avatar>
           <div className="absolute inset-0 pulse-ring"></div>
         </div>
-        <h2 className="text-2xl font-bold text-gray-800">{remoteUser?.name}</h2>
+        <h2 className="text-2xl font-bold text-gray-800">{displayName}</h2>
         <p className="text-gray-600">
           {isOngoingCall ? 'Ongoing call' : 'Connecting...'}
         </p>
@@ -365,6 +323,48 @@ const CallDialog = () => {
       </div>
     </div>
   );
+
+  // Add a pulse animation to the CSS
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 0.8;
+        }
+        70% {
+          transform: scale(1.1);
+          opacity: 0.4;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 0.8;
+        }
+      }
+      
+      .pulse-ring {
+        border-radius: 50%;
+        border: 3px solid #46C8B6;
+        animation: pulse 2s infinite;
+      }
+      
+      .mobile-call-dialog {
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        border-radius: 0;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   return (
     <>      

@@ -24,10 +24,12 @@ const CallController = () => {
   // Initialize WebRTC when user logs in
   useEffect(() => {
     if (currentUser) {
+      console.log('Initializing WebRTC for user:', currentUser.id);
+      
       // Initialize WebRTC service with current user
       webRTCService.initialize(currentUser)
         .then(() => {
-          console.log('WebRTC initialized for user:', currentUser.id);
+          console.log('WebRTC initialized successfully');
           
           // Request notification permission
           return notificationService.requestPermission(currentUser);
@@ -38,7 +40,7 @@ const CallController = () => {
       
       // Set up listeners
       webRTCService.onIncomingCall((callData: CallData) => {
-        console.log('Incoming call:', callData);
+        console.log('Incoming call received:', callData);
         
         // Find caller user object from online users
         const caller = onlineUsers.find(user => user.id === callData.callerId);
@@ -51,8 +53,12 @@ const CallController = () => {
         setIncomingCall(true, callData);
         
         // Play notification sound
-        const audio = new Audio('/sounds/incoming-call.mp3');
-        audio.play().catch(err => console.error('Error playing notification sound:', err));
+        const audio = webRTCService.getSound('incoming-call');
+        if (audio) {
+          audio.currentTime = 0;
+          audio.loop = true;
+          audio.play().catch(err => console.error('Error playing notification sound:', err));
+        }
         
         // Show toast notification with action buttons
         toast({
@@ -85,10 +91,10 @@ const CallController = () => {
         
         // Add call started message
         if (currentUser) {
-          const callData = webRTCService['currentCall'];
+          const callData = webRTCService['currentCall']?.metadata;
           if (callData) {
             const callerId = callData.callerId;
-            const receiverId = callData.receiverId;
+            const receiverId = callData.receiverId || webRTCService['currentCall'].peer;
             
             // Add a call message to the chat
             addMessage({
@@ -103,6 +109,12 @@ const CallController = () => {
             });
           }
         }
+        
+        // Stop any playing sounds
+        const incomingSound = webRTCService.getSound('incoming-call');
+        const outgoingSound = webRTCService.getSound('outgoing-call');
+        if (incomingSound) incomingSound.pause();
+        if (outgoingSound) outgoingSound.pause();
       });
       
       webRTCService.onCallEnded(() => {
@@ -110,10 +122,10 @@ const CallController = () => {
         
         // Add call ended message
         if (currentUser) {
-          const callData = webRTCService['currentCall'];
+          const callData = webRTCService['currentCall']?.metadata;
           if (callData) {
             const callerId = callData.callerId;
-            const receiverId = callData.receiverId;
+            const receiverId = callData.receiverId || webRTCService['currentCall'].peer;
             
             // Add a call message to the chat
             addMessage({
@@ -128,6 +140,12 @@ const CallController = () => {
             });
           }
         }
+        
+        // Stop any playing sounds
+        const incomingSound = webRTCService.getSound('incoming-call');
+        const outgoingSound = webRTCService.getSound('outgoing-call');
+        if (incomingSound) incomingSound.pause();
+        if (outgoingSound) outgoingSound.pause();
         
         resetCallState();
       });
@@ -144,12 +162,15 @@ const CallController = () => {
     if (!currentUser) return;
     
     try {
+      console.log(`Initiating ${callType} call to:`, receiver.name);
+      
       // Start the call
       const callId = await webRTCService.startCall(receiver, callType);
       
       // Get local stream and update state
-      if (webRTCService['localStream']) {
-        setLocalStream(webRTCService['localStream']);
+      const localStream = webRTCService.localStream;
+      if (localStream) {
+        setLocalStream(localStream);
       }
       
       // Create call data
@@ -168,9 +189,12 @@ const CallController = () => {
       setOutgoingCall(true, callData);
       
       // Play outgoing call sound
-      const audio = new Audio('/sounds/outgoing-call.mp3');
-      audio.loop = true;
-      audio.play().catch(err => console.error('Error playing outgoing call sound:', err));
+      const audio = webRTCService.getSound('outgoing-call');
+      if (audio) {
+        audio.currentTime = 0;
+        audio.loop = true;
+        audio.play().catch(err => console.error('Error playing outgoing call sound:', err));
+      }
       
       // Send notification
       await notificationService.sendCallNotification(

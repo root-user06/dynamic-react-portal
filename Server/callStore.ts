@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User } from './lib/types';
@@ -46,25 +47,34 @@ export const useCallStore = create<CallState>()(
     (set) => ({
       ...initialState,
       
-      setIncomingCall: (isIncoming, callData = null) => set((state) => ({
-        isIncomingCall: isIncoming,
-        isOutgoingCall: isIncoming ? false : state.isOutgoingCall,
-        currentCallData: callData || state.currentCallData,
-      })),
+      setIncomingCall: (isIncoming, callData = null) => set((state) => {
+        console.log('Setting incoming call:', isIncoming, callData);
+        return {
+          isIncomingCall: isIncoming,
+          isOutgoingCall: isIncoming ? false : state.isOutgoingCall,
+          currentCallData: callData || state.currentCallData,
+        };
+      }),
       
-      setOutgoingCall: (isOutgoing, callData = null) => set((state) => ({
-        isOutgoingCall: isOutgoing,
-        isIncomingCall: isOutgoing ? false : state.isIncomingCall,
-        currentCallData: callData || state.currentCallData,
-      })),
+      setOutgoingCall: (isOutgoing, callData = null) => set((state) => {
+        console.log('Setting outgoing call:', isOutgoing, callData);
+        return {
+          isOutgoingCall: isOutgoing,
+          isIncomingCall: isOutgoing ? false : state.isIncomingCall,
+          currentCallData: callData || state.currentCallData,
+        };
+      }),
       
-      setOngoingCall: (isOngoing, callData = null) => set((state) => ({
-        isOngoingCall: isOngoing,
-        // When call becomes ongoing, clear incoming/outgoing flags
-        isIncomingCall: isOngoing ? false : state.isIncomingCall,
-        isOutgoingCall: isOngoing ? false : state.isOutgoingCall,
-        currentCallData: callData || state.currentCallData,
-      })),
+      setOngoingCall: (isOngoing, callData = null) => set((state) => {
+        console.log('Setting ongoing call:', isOngoing, callData);
+        return {
+          isOngoingCall: isOngoing,
+          // When call becomes ongoing, clear incoming/outgoing flags
+          isIncomingCall: isOngoing ? false : state.isIncomingCall,
+          isOutgoingCall: isOngoing ? false : state.isOutgoingCall,
+          currentCallData: callData || state.currentCallData,
+        };
+      }),
       
       setRemoteStream: (stream) => set({
         remoteStream: stream,

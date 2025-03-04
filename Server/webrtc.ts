@@ -1,8 +1,7 @@
 
 import Peer from 'peerjs';
 import { v4 as uuidv4 } from 'uuid';
-import { database } from './lib/firebase';
-import { ref, set, onValue, remove } from 'firebase/database';
+import { supabase } from '../src/integrations/supabase/client';
 import { User } from './lib/types';
 
 // Configure STUN servers for optimal connection
@@ -29,21 +28,42 @@ export interface CallData {
 export interface PeerConnection {
   peer: Peer;
   stream: MediaStream | null;
-  call: any | null; // Changed from Peer.MediaConnection to any
+  call: any | null;
 }
 
 class WebRTCService {
   private peer: Peer | null = null;
   private myStream: MediaStream | null = null;
-  private currentCall: any | null = null; // Changed from Peer.MediaConnection to any
+  private currentCall: any | null = null;
   private currentUser: User | null = null;
   private onIncomingCallCallback: ((callData: CallData) => void) | null = null;
   private onCallAcceptedCallback: ((stream: MediaStream) => void) | null = null;
   private onCallEndedCallback: (() => void) | null = null;
+  private subscribedChannels: string[] = [];
+  private soundCache: { [key: string]: HTMLAudioElement } = {};
 
   constructor() {
-    // Initialize listeners for call status changes
-    this.initCallStatusListeners();
+    this.preloadSounds();
+    this.listenForCallStatusChanges();
+  }
+
+  private preloadSounds() {
+    // Preload sounds to avoid issues
+    const sounds = [
+      { name: 'incoming-call', path: '/sounds/incoming-call.mp3' },
+      { name: 'outgoing-call', path: '/sounds/outgoing-call.mp3' }
+    ];
+
+    sounds.forEach(sound => {
+      const audio = new Audio();
+      audio.src = sound.path;
+      audio.load(); // Preload the audio
+      this.soundCache[sound.name] = audio;
+    });
+  }
+
+  getSound(name: string): HTMLAudioElement | null {
+    return this.soundCache[name] || null;
   }
 
   // Initialize the WebRTC peer connection
@@ -56,9 +76,11 @@ class WebRTCService {
 
     return new Promise((resolve, reject) => {
       try {
+        console.log('Initializing WebRTC with user ID:', currentUser.id);
         // Create a new Peer with the user's ID and STUN/TURN server configuration
         this.peer = new Peer(currentUser.id, {
-          config: ICE_SERVERS
+          config: ICE_SERVERS,
+          debug: 3 // Set debug level to see what's happening
         });
 
         this.peer.on('open', (id) => {
@@ -70,6 +92,11 @@ class WebRTCService {
         this.peer.on('error', (error) => {
           console.error('PeerJS error:', error);
           reject(error);
+        });
+
+        this.peer.on('disconnected', () => {
+          console.log('Disconnected from PeerJS server, attempting to reconnect...');
+          this.peer?.reconnect();
         });
       } catch (error) {
         console.error('Error initializing WebRTC:', error);
@@ -83,46 +110,73 @@ class WebRTCService {
     if (!this.peer) return;
 
     this.peer.on('call', async (call) => {
+      console.log('Received call from peer:', call.peer);
       try {
-        // Get caller information from database
-        const callerId = call.metadata?.callerId || call.peer;
-        const callRef = ref(database, `calls/${callerId}_${this.currentUser?.id}`);
-        
-        onValue(callRef, (snapshot) => {
-          const callData = snapshot.val() as CallData;
-          if (callData && this.onIncomingCallCallback) {
-            this.onIncomingCallCallback(callData);
-          }
-        }, { onlyOnce: true });
-
         // Store the current call
         this.currentCall = call;
+        
+        // Get call data from Supabase
+        const { data: callData } = await supabase
+          .from('calls')
+          .select('*')
+          .eq('call_id', call.metadata?.callId || '')
+          .single();
+        
+        if (callData && this.onIncomingCallCallback) {
+          const formattedCallData: CallData = {
+            callId: callData.call_id,
+            callerId: callData.caller_id,
+            callerName: callData.caller_name,
+            receiverId: callData.receiver_id,
+            callType: callData.call_type,
+            timestamp: callData.timestamp,
+            status: callData.status
+          };
+          
+          console.log('Incoming call data:', formattedCallData);
+          this.onIncomingCallCallback(formattedCallData);
+        } else {
+          console.error('Failed to get call data from Supabase');
+        }
       } catch (error) {
         console.error('Error handling incoming call:', error);
       }
     });
   }
 
-  // Initialize listeners for call status changes in Firebase
-  private initCallStatusListeners(): void {
-    if (!this.currentUser) return;
+  // Listen for call status changes in Supabase
+  private listenForCallStatusChanges(): void {
+    const currentUserId = this.currentUser?.id;
+    if (!currentUserId) return;
 
-    // Listen for call status changes
-    const callsRef = ref(database, 'calls');
-    onValue(callsRef, (snapshot) => {
-      const calls = snapshot.val();
-      if (!calls) return;
-
-      Object.entries(calls).forEach(([key, value]) => {
-        const callData = value as CallData;
-        const [callerId, receiverId] = key.split('_');
-
-        // If I'm the receiver and the call was accepted, missed, or ended
-        if (receiverId === this.currentUser?.id && callData.status === 'ended' && this.onCallEndedCallback) {
-          this.onCallEndedCallback();
-        }
-      });
+    // Unsubscribe from any existing channels
+    this.subscribedChannels.forEach(channelName => {
+      supabase.removeChannel(supabase.channel(channelName));
     });
+    this.subscribedChannels = [];
+
+    // Listen for call updates
+    const callChannel = supabase.channel('call-updates')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'calls' },
+        (payload) => {
+          const callData = payload.new as any;
+          
+          // Check if this call involves the current user
+          if (callData.caller_id === currentUserId || callData.receiver_id === currentUserId) {
+            console.log('Call status changed:', callData.status);
+            
+            // Handle call ended
+            if (callData.status === 'ended' && this.onCallEndedCallback) {
+              this.onCallEndedCallback();
+            }
+          }
+        }
+      )
+      .subscribe();
+      
+    this.subscribedChannels.push('call-updates');
   }
 
   // Register callbacks
@@ -145,6 +199,8 @@ class WebRTCService {
     }
 
     try {
+      console.log(`Starting ${callType} call to user:`, receiver.id);
+      
       // Get media stream based on call type with optimized settings
       const constraints = {
         audio: {
@@ -160,29 +216,37 @@ class WebRTCService {
       };
 
       this.myStream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('Got local media stream');
 
       // Generate a unique call ID
       const callId = uuidv4();
 
-      // Store call data in Firebase
-      const callData: CallData = {
-        callId,
-        callerId: this.currentUser.id,
-        callerName: this.currentUser.name,
-        receiverId: receiver.id,
-        callType,
+      // Store call data in Supabase
+      const callData = {
+        call_id: callId,
+        caller_id: this.currentUser.id,
+        caller_name: this.currentUser.name,
+        receiver_id: receiver.id,
+        call_type: callType,
         timestamp: new Date().toISOString(),
         status: 'pending'
       };
 
-      const callRef = ref(database, `calls/${this.currentUser.id}_${receiver.id}`);
-      await set(callRef, callData);
+      const { error } = await supabase.from('calls').insert(callData);
+      
+      if (error) {
+        console.error('Error storing call data:', error);
+        throw error;
+      }
+      
+      console.log('Call data stored, calling peer:', receiver.id);
 
       // Call the peer
       this.currentCall = this.peer.call(receiver.id, this.myStream, {
         metadata: {
           callerId: this.currentUser.id,
-          callType
+          callType,
+          callId
         }
       });
 
@@ -203,6 +267,8 @@ class WebRTCService {
     }
 
     try {
+      console.log('Accepting call');
+      
       // Get media stream with optimized settings
       const callType = this.currentCall.metadata?.callType || 'audio';
       const constraints = {
@@ -219,30 +285,33 @@ class WebRTCService {
       };
 
       this.myStream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('Got local media stream for accepting call');
 
-      // Update call status in Firebase
+      // Update call status in Supabase
       const callerId = this.currentCall.metadata?.callerId || this.currentCall.peer;
-      const callRef = ref(database, `calls/${callerId}_${this.currentUser.id}`);
+      const callId = this.currentCall.metadata?.callId;
       
-      // Get current call data and update status
-      onValue(callRef, (snapshot) => {
-        const callData = snapshot.val() as CallData;
-        if (callData) {
-          set(callRef, {
-            ...callData,
-            status: 'accepted'
-          });
+      if (callId) {
+        const { error } = await supabase
+          .from('calls')
+          .update({ status: 'accepted' })
+          .eq('call_id', callId);
+          
+        if (error) {
+          console.error('Error updating call status:', error);
         }
-      }, { onlyOnce: true });
+      }
 
       // Answer the call with our media stream
       this.currentCall.answer(this.myStream);
+      console.log('Call answered');
 
       // Set up event handlers for the call
       this.setupCallEventHandlers(this.currentCall);
 
       return new Promise((resolve) => {
         this.currentCall!.on('stream', (remoteStream) => {
+          console.log('Received remote stream');
           if (this.onCallAcceptedCallback) {
             this.onCallAcceptedCallback(remoteStream);
           }
@@ -262,19 +331,20 @@ class WebRTCService {
     }
 
     try {
-      const callerId = this.currentCall.metadata?.callerId || this.currentCall.peer;
-      const callRef = ref(database, `calls/${callerId}_${this.currentUser.id}`);
+      console.log('Rejecting call');
       
-      // Get current call data and update status
-      onValue(callRef, (snapshot) => {
-        const callData = snapshot.val() as CallData;
-        if (callData) {
-          set(callRef, {
-            ...callData,
-            status: 'rejected'
-          });
+      const callId = this.currentCall.metadata?.callId;
+      
+      if (callId) {
+        const { error } = await supabase
+          .from('calls')
+          .update({ status: 'rejected' })
+          .eq('call_id', callId);
+          
+        if (error) {
+          console.error('Error updating call status:', error);
         }
-      }, { onlyOnce: true });
+      }
 
       // Close the call
       this.currentCall.close();
@@ -291,34 +361,20 @@ class WebRTCService {
     }
 
     try {
-      const callerId = this.currentUser.id;
-      const receiverId = this.currentCall.peer;
-      const callRef = ref(database, `calls/${callerId}_${receiverId}`);
+      console.log('Ending call');
       
-      // Check if we need to update receiver's call reference instead
-      onValue(callRef, (snapshot) => {
-        if (!snapshot.exists()) {
-          const alternateCallRef = ref(database, `calls/${receiverId}_${callerId}`);
+      const callId = this.currentCall.metadata?.callId;
+      
+      if (callId) {
+        const { error } = await supabase
+          .from('calls')
+          .update({ status: 'ended' })
+          .eq('call_id', callId);
           
-          onValue(alternateCallRef, (snapshot) => {
-            const callData = snapshot.val() as CallData;
-            if (callData) {
-              set(alternateCallRef, {
-                ...callData,
-                status: 'ended'
-              });
-            }
-          }, { onlyOnce: true });
-        } else {
-          const callData = snapshot.val() as CallData;
-          if (callData) {
-            set(callRef, {
-              ...callData,
-              status: 'ended'
-            });
-          }
+        if (error) {
+          console.error('Error updating call status:', error);
         }
-      }, { onlyOnce: true });
+      }
 
       // Close the call
       this.currentCall.close();
@@ -339,7 +395,7 @@ class WebRTCService {
   }
 
   // Set up event handlers for a call
-  private setupCallEventHandlers(call: any): void { // Changed from Peer.MediaConnection to any
+  private setupCallEventHandlers(call: any): void {
     call.on('stream', (remoteStream) => {
       console.log('Received remote stream');
       if (this.onCallAcceptedCallback) {
@@ -360,8 +416,21 @@ class WebRTCService {
     });
   }
 
+  // Get the local stream
+  get localStream(): MediaStream | null {
+    return this.myStream;
+  }
+
   // Clean up resources
   cleanup(): void {
+    console.log('Cleaning up WebRTC resources');
+    
+    // Unsubscribe from any existing channels
+    this.subscribedChannels.forEach(channelName => {
+      supabase.removeChannel(supabase.channel(channelName));
+    });
+    this.subscribedChannels = [];
+    
     if (this.currentCall) {
       this.currentCall.close();
       this.currentCall = null;
