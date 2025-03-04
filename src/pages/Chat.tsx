@@ -4,8 +4,6 @@ import ChatWindow from '@/components/ChatWindow';
 import { useChatStore } from '@/lib/store';
 import { updateUserStatus } from '@/lib/firebase';
 import { useNavigate, useParams } from 'react-router-dom';
-import CallDialog from '@/components/CallDialog';
-import CallController from '@/components/CallController';
 import Loader from '@/components/Loader';
 
 const Chat = () => {
@@ -75,12 +73,6 @@ const Chat = () => {
 
   return (
     <div className="h-full bg-white flex flex-col">
-      {/* Call Controller (invisible component) */}
-      <CallController />
-      
-      {/* Call Dialog */}
-      <CallDialog />
-      
       <ChatWindow 
         showBackButton={true} 
         onBack={() => {
