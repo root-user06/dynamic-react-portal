@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '@/lib/store';
 import { Message } from '@/lib/types';
@@ -8,7 +7,6 @@ import { Send, MoreVertical, Phone, Video, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import { useCallStore } from '@/backend/callStore';
-import { useToast } from '@/components/ui/use-toast';
 
 interface ChatWindowProps {
   showBackButton?: boolean;
@@ -20,7 +18,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
   const [newMessage, setNewMessage] = useState('');
   const { messages, currentUser, selectedUser, addMessage } = useChatStore();
   const { setOutgoingCall } = useCallStore();
-  const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
@@ -58,16 +55,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
 
   const handleCall = async (callType: 'audio' | 'video') => {
     if (!selectedUser || !currentUser) return;
-    
-    // Check if user is offline
-    if (!selectedUser.isOnline) {
-      toast({
-        title: "Cannot make call",
-        description: `${selectedUser.name} is currently offline`,
-        variant: "destructive"
-      });
-      return;
-    }
     
     try {
       const callId = await (window as any).initiateCall(selectedUser, callType);
@@ -119,10 +106,8 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
                 <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                   {selectedUser.name[0].toUpperCase()}
                 </div>
-                {selectedUser.isOnline ? (
+                {selectedUser.isOnline && (
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
-                ) : (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-gray-400 rounded-full border-2 border-white" />
                 )}
               </div>
               <div>
@@ -136,20 +121,16 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className={`${selectedUser.isOnline ? 'text-[#46C8B6]' : 'text-gray-400'}`}
+                className="text-[#46C8B6]"
                 onClick={() => handleCall('audio')}
-                disabled={!selectedUser.isOnline}
-                title={selectedUser.isOnline ? "Audio call" : `${selectedUser.name} is offline`}
               >
                 <Phone className="h-5 w-5" />
               </Button>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className={`${selectedUser.isOnline ? 'text-[#46C8B6]' : 'text-gray-400'}`}
+                className="text-[#46C8B6]"
                 onClick={() => handleCall('video')}
-                disabled={!selectedUser.isOnline}
-                title={selectedUser.isOnline ? "Video call" : `${selectedUser.name} is offline`}
               >
                 <Video className="h-5 w-5" />
               </Button>
