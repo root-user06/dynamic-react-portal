@@ -1,8 +1,8 @@
 
 import { useEffect } from 'react';
-import { useCallStore } from '@/backend/callStore';
-import webRTCService, { CallData } from '@/backend/webrtc';
-import notificationService from '@/backend/notifications';
+import { useCallStore } from '@/lib/callStore';
+import webRTCService, { CallData } from '@/lib/webrtc';
+import notificationService from '@/lib/notifications';
 import { useChatStore } from '@/lib/store';
 import { useToast } from './ui/use-toast';
 import { User } from '@/lib/types';
@@ -91,10 +91,10 @@ const CallController = () => {
         
         // Add call started message
         if (currentUser) {
-          const callData = webRTCService['currentCall']?.metadata;
+          const callData = webRTCService.currentCall?.metadata;
           if (callData) {
             const callerId = callData.callerId;
-            const receiverId = callData.receiverId || webRTCService['currentCall'].peer;
+            const receiverId = callData.receiverId || webRTCService.currentCall.peer;
             
             // Add a call message to the chat
             addMessage({
@@ -122,10 +122,10 @@ const CallController = () => {
         
         // Add call ended message
         if (currentUser) {
-          const callData = webRTCService['currentCall']?.metadata;
+          const callData = webRTCService.currentCall?.metadata;
           if (callData) {
             const callerId = callData.callerId;
-            const receiverId = callData.receiverId || webRTCService['currentCall'].peer;
+            const receiverId = callData.receiverId || webRTCService.currentCall.peer;
             
             // Add a call message to the chat
             addMessage({

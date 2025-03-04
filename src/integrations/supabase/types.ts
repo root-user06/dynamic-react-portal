@@ -9,7 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      calls: {
+        Row: {
+          call_id: string
+          call_type: string
+          caller_id: string
+          caller_name: string
+          created_at: string | null
+          id: number
+          receiver_id: string
+          status: string
+          timestamp: string | null
+        }
+        Insert: {
+          call_id: string
+          call_type: string
+          caller_id: string
+          caller_name: string
+          created_at?: string | null
+          id?: number
+          receiver_id: string
+          status: string
+          timestamp?: string | null
+        }
+        Update: {
+          call_id?: string
+          call_type?: string
+          caller_id?: string
+          caller_name?: string
+          created_at?: string | null
+          id?: number
+          receiver_id?: string
+          status?: string
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
