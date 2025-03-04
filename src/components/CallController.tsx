@@ -1,8 +1,8 @@
 
 import { useEffect } from 'react';
-import { useCallStore } from '@/server/callStore';
-import webRTCService, { CallData } from '@/server/webrtc';
-import notificationService from '@/server/notifications';
+import { useCallStore } from '@/backend/callStore';
+import webRTCService, { CallData } from '@/backend/webrtc';
+import notificationService from '@/backend/notifications';
 import { useChatStore } from '@/lib/store';
 import { useToast } from './ui/use-toast';
 import { User } from '@/lib/types';
