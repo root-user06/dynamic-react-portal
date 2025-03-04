@@ -6,7 +6,6 @@ import notificationService from '@/server/notifications';
 import { useChatStore } from '@/lib/store';
 import { useToast } from './ui/use-toast';
 import { User } from '@/lib/types';
-import { Phone, Video } from 'lucide-react';
 
 // This component doesn't render anything, it just sets up call-related listeners
 const CallController = () => {
@@ -85,21 +84,24 @@ const CallController = () => {
         setOngoingCall(true);
         
         // Add call started message
-        if (currentUser && webRTCService['currentCall']) {
-          const callerId = webRTCService['currentCall'].metadata?.callerId || webRTCService['currentCall'].peer;
-          const receiverId = callerId === currentUser.id ? webRTCService['currentCall'].peer : currentUser.id;
-          
-          // Add a call message to the chat
-          addMessage({
-            id: `call-${Date.now()}`,
-            senderId: currentUser.id,
-            receiverId: receiverId,
-            content: `Call started`,
-            timestamp: new Date().toISOString(),
-            isRead: true,
-            callType: webRTCService['currentCall'].metadata?.callType || 'audio',
-            callStatus: 'started'
-          });
+        if (currentUser) {
+          const callData = webRTCService['currentCall'];
+          if (callData) {
+            const callerId = callData.callerId;
+            const receiverId = callData.receiverId;
+            
+            // Add a call message to the chat
+            addMessage({
+              id: `call-${Date.now()}`,
+              senderId: currentUser.id,
+              receiverId: currentUser.id === callerId ? receiverId : callerId,
+              content: `Call started`,
+              timestamp: new Date().toISOString(),
+              isRead: true,
+              callType: callData.callType,
+              callStatus: 'started'
+            });
+          }
         }
       });
       
@@ -107,21 +109,24 @@ const CallController = () => {
         console.log('Call ended');
         
         // Add call ended message
-        if (currentUser && webRTCService['currentCall']) {
-          const callerId = webRTCService['currentCall'].metadata?.callerId || webRTCService['currentCall'].peer;
-          const receiverId = callerId === currentUser.id ? webRTCService['currentCall'].peer : currentUser.id;
-          
-          // Add a call message to the chat
-          addMessage({
-            id: `call-end-${Date.now()}`,
-            senderId: currentUser.id,
-            receiverId: receiverId,
-            content: `Call ended`,
-            timestamp: new Date().toISOString(),
-            isRead: true,
-            callType: webRTCService['currentCall'].metadata?.callType || 'audio',
-            callStatus: 'ended'
-          });
+        if (currentUser) {
+          const callData = webRTCService['currentCall'];
+          if (callData) {
+            const callerId = callData.callerId;
+            const receiverId = callData.receiverId;
+            
+            // Add a call message to the chat
+            addMessage({
+              id: `call-end-${Date.now()}`,
+              senderId: currentUser.id,
+              receiverId: currentUser.id === callerId ? receiverId : callerId,
+              content: `Call ended`,
+              timestamp: new Date().toISOString(),
+              isRead: true,
+              callType: callData.callType,
+              callStatus: 'ended'
+            });
+          }
         }
         
         resetCallState();
@@ -139,12 +144,12 @@ const CallController = () => {
     if (!currentUser) return;
     
     try {
-      // Start the call - only request video for video calls
+      // Start the call
       const callId = await webRTCService.startCall(receiver, callType);
       
       // Get local stream and update state
-      if (webRTCService['myStream']) {
-        setLocalStream(webRTCService['myStream']);
+      if (webRTCService['localStream']) {
+        setLocalStream(webRTCService['localStream']);
       }
       
       // Create call data

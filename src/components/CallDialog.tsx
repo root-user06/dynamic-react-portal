@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent } from './ui/dialog';
 import { Button } from './ui/button';
@@ -8,6 +7,10 @@ import webRTCService from '@/server/webrtc';
 import { useChatStore } from '@/lib/store';
 import { Avatar } from './ui/avatar';
 import { cn } from '@/lib/utils';
+
+// Preload sounds to avoid loading issues
+const INCOMING_CALL_SOUND = new Audio('/sounds/incoming-call.mp3');
+const OUTGOING_CALL_SOUND = new Audio('/sounds/outgoing-call.mp3');
 
 const CallDialog = () => {
   const { 
@@ -24,8 +27,6 @@ const CallDialog = () => {
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const incomingCallSoundRef = useRef<HTMLAudioElement>(null);
-  const outgoingCallSoundRef = useRef<HTMLAudioElement>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
 
@@ -51,26 +52,26 @@ const CallDialog = () => {
 
   // Play or pause call sounds based on call state
   useEffect(() => {
-    if (incomingCallSoundRef.current && outgoingCallSoundRef.current) {
-      if (isIncomingCall) {
-        incomingCallSoundRef.current.loop = true;
-        incomingCallSoundRef.current.play().catch(error => console.log('Error playing sound:', error));
-        outgoingCallSoundRef.current.pause();
-      } else if (isOutgoingCall) {
-        outgoingCallSoundRef.current.loop = true;
-        outgoingCallSoundRef.current.play().catch(error => console.log('Error playing sound:', error));
-        incomingCallSoundRef.current.pause();
-      } else {
-        incomingCallSoundRef.current.pause();
-        outgoingCallSoundRef.current.pause();
-      }
+    // Preload sounds
+    INCOMING_CALL_SOUND.load();
+    OUTGOING_CALL_SOUND.load();
+    
+    if (isIncomingCall) {
+      INCOMING_CALL_SOUND.loop = true;
+      INCOMING_CALL_SOUND.play().catch(error => console.log('Error playing sound:', error));
+      OUTGOING_CALL_SOUND.pause();
+    } else if (isOutgoingCall) {
+      OUTGOING_CALL_SOUND.loop = true;
+      OUTGOING_CALL_SOUND.play().catch(error => console.log('Error playing sound:', error));
+      INCOMING_CALL_SOUND.pause();
+    } else {
+      INCOMING_CALL_SOUND.pause();
+      OUTGOING_CALL_SOUND.pause();
     }
 
     return () => {
-      if (incomingCallSoundRef.current && outgoingCallSoundRef.current) {
-        incomingCallSoundRef.current.pause();
-        outgoingCallSoundRef.current.pause();
-      }
+      INCOMING_CALL_SOUND.pause();
+      OUTGOING_CALL_SOUND.pause();
     };
   }, [isIncomingCall, isOutgoingCall, isOngoingCall]);
 
@@ -366,10 +367,7 @@ const CallDialog = () => {
   );
 
   return (
-    <>
-      <audio ref={incomingCallSoundRef} src="/sounds/incoming-call.mp3" />
-      <audio ref={outgoingCallSoundRef} src="/sounds/outgoing-call.mp3" />
-      
+    <>      
       <Dialog open={isOpen} onOpenChange={(open) => {
         if (!open) {
           handleEndCall();
