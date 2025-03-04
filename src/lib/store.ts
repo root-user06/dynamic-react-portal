@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { ChatState, Message, User } from '../../server/lib/types';
+import { ChatState, Message, User } from './types';
 import { persist } from 'zustand/middleware';
 import { sendMessage, updateUserStatus, subscribeToMessages, subscribeToUsers, updateMessageReadStatus } from './firebase';
 

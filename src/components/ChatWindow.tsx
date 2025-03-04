@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Send, MoreVertical, Phone, Video, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
-import { useCallStore } from '@/backend/callStore';
+import { useCallStore } from '@/server/callStore';
 
 interface ChatWindowProps {
   showBackButton?: boolean;

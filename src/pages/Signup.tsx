@@ -25,10 +25,10 @@ const Signup = () => {
         if (lastActiveUser) {
           await setSelectedUser(lastActiveUser);
         }
-        navigate('/userlist', { replace: true });
+        navigate('/chat', { replace: true });
       } else if (currentUser && !isRedirecting) {
         setIsRedirecting(true);
-        navigate('/userlist', { replace: true });
+        navigate('/chat', { replace: true });
       }
     };
     handleRedirect();

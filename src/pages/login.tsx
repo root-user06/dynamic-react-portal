@@ -19,7 +19,7 @@ import { Mail, Lock, } from 'lucide-react';
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as any)?.from?.pathname || '/userlist';
+  const from = (location.state as any)?.from?.pathname || '/chat';
   
   const { setCurrentUser, currentUser, lastActiveChatId, setSelectedUser, onlineUsers } = useChatStore();
   const [isRedirecting, setIsRedirecting] = useState(false);

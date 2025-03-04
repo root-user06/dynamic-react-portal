@@ -3,7 +3,6 @@ import { MessageCircle, User, Users } from 'lucide-react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useChatStore } from '@/lib/store';
 import { useEffect } from 'react';
-import Loader from './Loader';
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -25,7 +24,6 @@ const Layout = () => {
   useEffect(() => {
     if (location.pathname === '/') {
       navigate('/userlist');
-      <Loader />
     }
   }, [location.pathname, navigate]);
 
@@ -38,7 +36,7 @@ const Layout = () => {
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white">
         <div className="flex items-center justify-around">
-          {/* <button
+          <button
             onClick={() => navigate('/userlist')}
             className={`flex flex-col items-center p-2 ${
               activeTab === 'userlist' ? 'text-[#46C8B6]' : 'text-gray-600'
@@ -46,11 +44,11 @@ const Layout = () => {
           >
             <Users className="h-6 w-6" />
             <span className="text-xs mt-1">Chats</span>
-          </button> */}
+          </button>
           <button
-            onClick={() => navigate('/userlist')}
+            onClick={() => navigate('/chat')}
             className={`flex flex-col items-center p-2 ${
-              activeTab === 'userlist' ? 'text-[#46C8B6]' : 'text-gray-600'
+              activeTab === 'chat' ? 'text-[#46C8B6]' : 'text-gray-600'
             }`}
           >
             <MessageCircle className="h-6 w-6" />
