@@ -3,7 +3,7 @@ import { database } from './firebase';
 import { ref, set, onValue, update, get, push, onChildAdded } from 'firebase/database';
 import { CallData } from './callStore';
 import { User } from './types';
-import notificationService from './notifications';
+import notificationService, { soundManager } from './notifications';
 
 class WebRTCService {
   peer: any = null;
@@ -117,13 +117,7 @@ class WebRTCService {
       await set(callRef, callData);
       
       // Play outgoing call sound
-      const outgoingCallSound = notificationService.getSound('outgoing-call');
-      if (outgoingCallSound) {
-        outgoingCallSound.loop = true;
-        outgoingCallSound.play().catch(err => {
-          console.warn('Could not play outgoing call sound:', err);
-        });
-      }
+      soundManager.playSound('outgoing-call', true);
       
       // Store the current call
       this.currentCall = callData;
@@ -200,11 +194,7 @@ class WebRTCService {
     
     try {
       // Stop incoming call sound
-      const incomingCallSound = notificationService.getSound('incoming-call');
-      if (incomingCallSound) {
-        incomingCallSound.pause();
-        incomingCallSound.currentTime = 0;
-      }
+      soundManager.stopSound('incoming-call');
       
       // Set up peer connection
       this.setupPeerConnection();
@@ -284,11 +274,7 @@ class WebRTCService {
     
     try {
       // Stop incoming call sound
-      const incomingCallSound = notificationService.getSound('incoming-call');
-      if (incomingCallSound) {
-        incomingCallSound.pause();
-        incomingCallSound.currentTime = 0;
-      }
+      soundManager.stopSound('incoming-call');
       
       // Update call status in Firebase
       const callRef = ref(database, `calls/${this.currentCall.callId}`);
@@ -317,17 +303,7 @@ class WebRTCService {
     
     try {
       // Stop any playing sounds
-      const incomingCallSound = notificationService.getSound('incoming-call');
-      if (incomingCallSound) {
-        incomingCallSound.pause();
-        incomingCallSound.currentTime = 0;
-      }
-      
-      const outgoingCallSound = notificationService.getSound('outgoing-call');
-      if (outgoingCallSound) {
-        outgoingCallSound.pause();
-        outgoingCallSound.currentTime = 0;
-      }
+      soundManager.stopAllSounds();
       
       // Update call status in Firebase
       const callRef = ref(database, `calls/${this.currentCall.callId}`);
@@ -364,15 +340,6 @@ class WebRTCService {
     // Store the current call
     this.currentCall = callData;
     
-    // Trigger the incoming call sound
-    const incomingCallSound = notificationService.getSound('incoming-call');
-    if (incomingCallSound) {
-      incomingCallSound.loop = true;
-      incomingCallSound.play().catch(err => {
-        console.warn('Could not play notification sound:', err);
-      });
-    }
-    
     // Trigger the incoming call callback
     if (this.onIncomingCallCallback) {
       this.onIncomingCallCallback(callData);
@@ -383,11 +350,7 @@ class WebRTCService {
     console.log('Call accepted, setting up connection');
     
     // Stop outgoing call sound
-    const outgoingCallSound = notificationService.getSound('outgoing-call');
-    if (outgoingCallSound) {
-      outgoingCallSound.pause();
-      outgoingCallSound.currentTime = 0;
-    }
+    soundManager.stopSound('outgoing-call');
     
     try {
       if (this.peerConnection && callData.answer) {
@@ -412,17 +375,7 @@ class WebRTCService {
     console.log('Call ended');
     
     // Stop any playing sounds
-    const incomingCallSound = notificationService.getSound('incoming-call');
-    if (incomingCallSound) {
-      incomingCallSound.pause();
-      incomingCallSound.currentTime = 0;
-    }
-    
-    const outgoingCallSound = notificationService.getSound('outgoing-call');
-    if (outgoingCallSound) {
-      outgoingCallSound.pause();
-      outgoingCallSound.currentTime = 0;
-    }
+    soundManager.stopAllSounds();
     
     // Trigger the call ended callback
     if (this.onCallEndedCallback) {
@@ -435,6 +388,9 @@ class WebRTCService {
 
   cleanup(): void {
     console.log('Cleaning up WebRTC resources');
+    
+    // Stop any playing sounds
+    soundManager.stopAllSounds();
     
     // Close peer connection
     if (this.peerConnection) {

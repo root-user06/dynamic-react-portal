@@ -3,26 +3,13 @@ import { User } from './types';
 import { database } from './firebase';
 import { ref, get } from 'firebase/database';
 
-class NotificationService {
-  private onMessageCallback: ((payload: any) => void) | null = null;
+// Sound management class to organize audio functionality
+class SoundManager {
   private sounds: {[key: string]: HTMLAudioElement} = {};
 
   constructor() {
-    // Initialize notification-related functionality
     if (typeof window !== 'undefined') {
-      this.setupServiceWorker();
       this.loadSounds();
-    }
-  }
-
-  private async setupServiceWorker() {
-    try {
-      if ('serviceWorker' in navigator && 'Notification' in window) {
-        // You could register a service worker for push notifications here
-        console.log('Service worker and notifications are supported');
-      }
-    } catch (error) {
-      console.error('Error setting up service worker:', error);
     }
   }
 
@@ -47,6 +34,62 @@ class NotificationService {
 
   getSound(name: string): HTMLAudioElement | null {
     return this.sounds[name] || null;
+  }
+
+  playSound(name: string, loop: boolean = false): void {
+    const sound = this.getSound(name);
+    if (sound) {
+      sound.loop = loop;
+      sound.currentTime = 0;
+      sound.play().catch(err => {
+        console.warn(`Could not play ${name} sound:`, err);
+      });
+    }
+  }
+
+  stopSound(name: string): void {
+    const sound = this.getSound(name);
+    if (sound) {
+      sound.pause();
+      sound.currentTime = 0;
+    }
+  }
+
+  stopAllSounds(): void {
+    Object.values(this.sounds).forEach(sound => {
+      sound.pause();
+      sound.currentTime = 0;
+    });
+  }
+}
+
+// Create the sound manager instance
+const soundManager = new SoundManager();
+
+class NotificationService {
+  private onMessageCallback: ((payload: any) => void) | null = null;
+
+  constructor() {
+    // Initialize notification-related functionality
+    if (typeof window !== 'undefined') {
+      this.setupServiceWorker();
+    }
+  }
+
+  private async setupServiceWorker() {
+    try {
+      if ('serviceWorker' in navigator && 'Notification' in window) {
+        // You could register a service worker for push notifications here
+        console.log('Service worker and notifications are supported');
+      }
+    } catch (error) {
+      console.error('Error setting up service worker:', error);
+    }
+  }
+
+  // Get access to sound functionality
+  getSoundManager(): SoundManager {
+    return soundManager;
   }
 
   // Request permission for notifications
@@ -118,13 +161,7 @@ class NotificationService {
       this.showNotification(title, body);
       
       // Play incoming call sound
-      const incomingCallSound = this.getSound('incoming-call');
-      if (incomingCallSound) {
-        incomingCallSound.loop = true;
-        incomingCallSound.play().catch(err => {
-          console.warn('Could not play notification sound:', err);
-        });
-      }
+      soundManager.playSound('incoming-call', true);
       
       console.log('Call notification sent to:', receiverId);
     } catch (error) {
@@ -136,3 +173,4 @@ class NotificationService {
 // Create and export a singleton instance
 const notificationService = new NotificationService();
 export default notificationService;
+export { soundManager };
