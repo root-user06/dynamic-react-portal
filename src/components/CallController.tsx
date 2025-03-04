@@ -6,7 +6,7 @@ import notificationService, { soundManager } from '@/lib/notifications';
 import { useChatStore } from '@/lib/store';
 import { useToast } from './ui/use-toast';
 import { User } from '@/lib/types';
-import { CallData } from '@/lib/callStore'; // Import CallData from callStore instead of webrtc
+import { CallData } from '@/lib/callStore'; // Import from callStore instead of webrtc
 
 // This component doesn't render anything, it just sets up call-related listeners
 const CallController = () => {
@@ -153,6 +153,16 @@ const CallController = () => {
   const handleInitiateCall = async (receiver: User, callType: 'audio' | 'video') => {
     if (!currentUser) return;
     
+    // Check if receiver is offline
+    if (!receiver.isOnline) {
+      toast({
+        title: "Cannot make call",
+        description: `${receiver.name} is currently offline`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       console.log(`Initiating ${callType} call to:`, receiver.name);
       
@@ -227,6 +237,13 @@ const CallController = () => {
           audioCallButton.addEventListener('click', () => {
             const receiver = (window as any).chatStore?.getState()?.selectedUser;
             if (receiver) {
+              if (!receiver.isOnline) {
+                toast({
+                  title: "Cannot make call",
+                  description: `${receiver.name} is currently offline`,
+                });
+                return;
+              }
               (window as any).initiateCall(receiver, 'audio');
             }
           });
@@ -237,6 +254,13 @@ const CallController = () => {
           videoCallButton.addEventListener('click', () => {
             const receiver = (window as any).chatStore?.getState()?.selectedUser;
             if (receiver) {
+              if (!receiver.isOnline) {
+                toast({
+                  title: "Cannot make call",
+                  description: `${receiver.name} is currently offline`,
+                });
+                return;
+              }
               (window as any).initiateCall(receiver, 'video');
             }
           });
@@ -256,7 +280,7 @@ const CallController = () => {
         observer.disconnect();
       };
     }
-  }, []);
+  }, [toast]);
 
   // Expose the method to the global window object for other components to access
   if (typeof window !== 'undefined') {

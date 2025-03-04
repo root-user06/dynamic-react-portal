@@ -74,7 +74,20 @@ const Chat = () => {
   };
 
   return (
-    <div className="h-full bg-white flex flex-col">
+    <div className="h-full bg-white flex flex-col overflow-hidden">
+      {/* Remove overflow-hidden to allow the chat to use full height without bottom nav */}
+      <style>
+        {`
+          /* Override the Layout styles when on the chat page */
+          .chat-page-layout {
+            padding-bottom: 0 !important;
+          }
+          .chat-page-layout + div[class*="fixed bottom-0"] {
+            display: none !important;
+          }
+        `}
+      </style>
+      
       {/* Call Controller (invisible component) */}
       <CallController />
       
