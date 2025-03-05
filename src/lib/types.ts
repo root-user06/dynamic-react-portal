@@ -25,6 +25,7 @@ export interface Note {
   creatorId: string;
   content: string;
   createdAt: string;
+  expiresAt: string; // Add expiration timestamp
 }
 
 export interface ChatState {

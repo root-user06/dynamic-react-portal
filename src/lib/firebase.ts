@@ -1,5 +1,19 @@
+
 import { initializeApp, getApp } from 'firebase/app';
-import { getDatabase, ref, set, onValue, push, Database, update, onDisconnect } from 'firebase/database';
+import { 
+  getDatabase, 
+  ref, 
+  set, 
+  onValue, 
+  push, 
+  Database, 
+  update, 
+  onDisconnect,
+  query,
+  orderByChild,
+  equalTo,
+  get
+} from 'firebase/database';
 import { 
   getAuth, 
   createUserWithEmailAndPassword, 

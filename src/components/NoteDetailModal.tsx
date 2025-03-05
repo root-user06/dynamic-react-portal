@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, MessageSquare } from 'lucide-react';
 import { Note } from '@/lib/types';
 import { useChatStore } from '@/lib/store';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -23,6 +23,11 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, isOpen, onClose
   const creator = onlineUsers.find(user => user.id === note.creatorId);
   const isOwnNote = note.creatorId === currentUser?.id;
   
+  // Calculate time remaining until expiration
+  const timeRemaining = note.expiresAt ? 
+    formatDistanceToNow(new Date(note.expiresAt), { addSuffix: false }) : 
+    '24 hours';
+  
   const handleDelete = () => {
     if (onDelete) {
       onDelete();
@@ -32,10 +37,10 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, isOpen, onClose
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md p-0">
+      <DialogContent className="sm:max-w-md p-0 bg-white rounded-xl">
         <DialogHeader className="p-4 border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <DialogTitle>Note</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">Note</DialogTitle>
             <div className="flex items-center space-x-2">
               {isOwnNote && onDelete && (
                 <Button variant="ghost" size="icon" onClick={handleDelete} className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50">
@@ -43,18 +48,22 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, isOpen, onClose
                 </Button>
               )}
               <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-                {/* <X className="h-4 w-4" /> */}
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </DialogHeader>
         
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-4">
           <div className="flex items-center space-x-3">
             <Avatar>
-              <AvatarFallback className="bg-gray-200">
-                {creator?.name[0] || '?'}
-              </AvatarFallback>
+              {creator?.photoURL ? (
+                <img src={creator.photoURL} alt={creator.name} className="h-full w-full object-cover" />
+              ) : (
+                <AvatarFallback className="bg-gray-200">
+                  {creator?.name[0] || '?'}
+                </AvatarFallback>
+              )}
             </Avatar>
             <div>
               <div className="font-medium">{creator?.name || 'User'}</div>
@@ -64,13 +73,16 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, isOpen, onClose
             </div>
           </div>
           
-          <div className="p-4 bg-gray-50 rounded-xl">
-            <p className="whitespace-pre-wrap">{note.content}</p>
+          <div className="relative">
+            <MessageSquare className="absolute -top-6 left-4 text-gray-300 h-10 w-10 transform -rotate-12" />
+            <div className="p-4 bg-gray-50 rounded-2xl">
+              <p className="whitespace-pre-wrap">{note.content}</p>
+            </div>
           </div>
           
           <div className="flex items-center justify-center pt-3">
             <div className="text-xs text-gray-500">
-              Friends can see this note
+              Expires in {timeRemaining}
             </div>
           </div>
         </div>
