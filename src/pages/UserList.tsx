@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useChatStore } from '@/lib/store';
 import { User, Note } from '@/lib/types';
@@ -103,7 +104,8 @@ const UserList = () => {
     });
 
   if (isLoading) {
-    return <Loader type="skeleton" skeletonType="userList" />;
+    // Fix: Updated the Loader component props to match what the component expects
+    return <Loader variant="userList" />;
   }
 
   return (
@@ -281,3 +283,4 @@ const UserList = () => {
 };
 
 export default UserList;
+
