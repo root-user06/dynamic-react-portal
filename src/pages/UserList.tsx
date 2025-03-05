@@ -143,7 +143,7 @@ const UserList = () => {
               <div className="relative">
                 {myNotes.length > 0 && (
                   <div 
-                    className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded-md shadow-sm border border-gray-200 text-xs max-w-[120px] truncate"
+                    className="absolute -top-12 right-0 transform -translate-y-4 bg-white px-3 py-2 rounded-2xl shadow border border-gray-200 text-xs max-w-[120px] truncate after:content-[''] after:absolute after:bottom-0 after:left-4 after:w-3 after:h-3 after:rotate-45 after:bg-white after:border-r after:border-b after:border-gray-200 after:translate-y-1.5"
                     onClick={() => handleNoteClick(myNotes[0])}
                   >
                     {myNotes[0].content.length > 60 
@@ -173,14 +173,14 @@ const UserList = () => {
                 className="flex flex-col items-center cursor-pointer"
                 onClick={() => handleNoteClick(note)}
               >
-                {note.content.length > 0 && (
-                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded-md shadow-sm border border-gray-200 text-xs max-w-[120px] truncate">
-                    {note.content.length > 60 
-                      ? `${note.content.substring(0, 60)}...` 
-                      : note.content}
-                  </div>
-                )}
-                <div className="relative w-14 h-14 rounded-full overflow-hidden">
+                <div className="relative">
+                  {note.content.length > 0 && (
+                    <div className="absolute -top-12 right-0 transform -translate-y-4 bg-white px-3 py-2 rounded-2xl shadow border border-gray-200 text-xs max-w-[120px] truncate after:content-[''] after:absolute after:bottom-0 after:left-4 after:w-3 after:h-3 after:rotate-45 after:bg-white after:border-r after:border-b after:border-gray-200 after:translate-y-1.5">
+                      {note.content.length > 60 
+                        ? `${note.content.substring(0, 60)}...` 
+                        : note.content}
+                    </div>
+                  )}
                   <Avatar className="w-14 h-14">
                     <AvatarFallback className="bg-gray-200 text-lg">
                       {noteCreator?.name[0].toUpperCase() || '?'}

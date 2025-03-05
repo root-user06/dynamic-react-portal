@@ -75,7 +75,7 @@ const NoteModal: React.FC<NoteModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md p-0 bg-white rounded-xl">
+      <DialogContent className="sm:max-w-md p-0 bg-white rounded-xl overflow-hidden">
         <DialogHeader className="p-4 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-semibold">New note</DialogTitle>
@@ -100,11 +100,11 @@ const NoteModal: React.FC<NoteModalProps> = ({ isOpen, onClose }) => {
         </div>
         
         {noteContent.trim() && (
-          <div className="p-4 flex justify-center">
+          <div className="px-4 pb-4 flex justify-center">
             <div className="relative max-w-[250px]">
-              <MessageSquare className="absolute -top-6 right-4 text-gray-300 h-10 w-10 transform rotate-12" />
-              <div className="bg-gray-100 px-4 py-3 rounded-2xl text-sm">
+              <div className="bg-gray-100 px-4 py-3 rounded-2xl text-sm relative">
                 {noteContent.trim()}
+                <div className="absolute -bottom-2 left-4 w-3 h-3 rotate-45 bg-gray-100"></div>
               </div>
             </div>
           </div>

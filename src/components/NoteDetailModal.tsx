@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Trash2, MessageSquare } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { Note } from '@/lib/types';
 import { useChatStore } from '@/lib/store';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -74,9 +74,9 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, isOpen, onClose
           </div>
           
           <div className="relative">
-            <MessageSquare className="absolute -top-6 left-4 text-gray-300 h-10 w-10 transform -rotate-12" />
-            <div className="p-4 bg-gray-50 rounded-2xl">
+            <div className="p-4 bg-gray-50 rounded-2xl relative">
               <p className="whitespace-pre-wrap">{note.content}</p>
+              <div className="absolute -bottom-2 left-4 w-3 h-3 rotate-45 bg-gray-50"></div>
             </div>
           </div>
           
