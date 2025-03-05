@@ -5,7 +5,6 @@ import { User, Note } from '@/lib/types';
 import { Search, PlusCircle, FileText, Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
-import Loader from '@/components/Loader';
 import NoteModal from '@/components/NoteModal';
 import NoteItem from '@/components/NoteItem';
 import NoteDetailModal from '@/components/NoteDetailModal';
@@ -104,8 +103,12 @@ const UserList = () => {
     });
 
   if (isLoading) {
-    // Fix: Updated the Loader component props to match what the component expects
-    return <Loader variant="userList" />;
+    // Simple loading indicator instead of the skeleton
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#46C8B6]"></div>
+      </div>
+    );
   }
 
   return (
@@ -283,4 +286,3 @@ const UserList = () => {
 };
 
 export default UserList;
-
