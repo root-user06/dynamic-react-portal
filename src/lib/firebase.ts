@@ -12,16 +12,14 @@ import {
   sendPasswordResetEmail,
   AuthError
 } from 'firebase/auth';
-import { Message, User } from './types';
+import { Message, User, Note } from './types';
 
-// Declare custom window property
 declare global {
   interface Window {
     activityTimeout?: NodeJS.Timeout;
   }
 }
 
-// Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_POUDELX_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_POUDELX_FIREBASE_AUTH_DOMAIN,
@@ -33,9 +31,6 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_POUDELX_FIREBASE_MEASUREMENT_ID
 };
 
-
-
-// Initialize Firebase with error handling
 let app;
 try {
   app = initializeApp(firebaseConfig);
@@ -45,15 +40,13 @@ try {
     console.error('Firebase initialization error:', error);
     throw error;
   }
-  app = getApp(); // Get the already initialized app
+  app = getApp();
 }
 
-// Initialize Firebase services
 const database = getDatabase(app);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Helper function to format auth errors
 const formatAuthError = (error: AuthError): string => {
   switch (error.code) {
     case 'auth/invalid-email':
@@ -85,7 +78,6 @@ const formatAuthError = (error: AuthError): string => {
   }
 };
 
-// Auth Operations
 export const registerWithEmail = async (email: string, password: string, name: string) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -123,7 +115,6 @@ export const loginWithEmail = async (email: string, password: string) => {
 
 export const loginWithGoogle = async () => {
   try {
-    // Configure Google provider
     googleProvider.setCustomParameters({
       prompt: 'select_account'
     });
@@ -144,7 +135,6 @@ export const loginWithGoogle = async () => {
   }
 };
 
-// Initialize RecaptchaVerifier
 export const initRecaptcha = (buttonId: string) => {
   return new RecaptchaVerifier(auth, buttonId, {
     size: 'invisible'
@@ -155,7 +145,6 @@ export const loginWithPhone = async (phoneNumber: string, recaptchaVerifier: Rec
   return signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
 };
 
-// Database References
 const getMessagesRef = () => {
   return ref(database, 'messages');
 };
@@ -164,15 +153,27 @@ const getUsersRef = () => {
   return ref(database, 'users');
 };
 
-// Message Operations
+const getNotesRef = () => {
+  return ref(database, 'notes');
+};
+
 export const sendMessage = async (message: Message) => {
   const newMessageRef = push(ref(database, 'messages'));
-  await set(newMessageRef, { ...message, id: newMessageRef.key });
+  await set(newMessageRef, { 
+    ...message, 
+    id: newMessageRef.key,
+    isDelivered: true 
+  });
 };
 
 export const updateMessageReadStatus = async (messageId: string, isRead: boolean) => {
   const messageRef = ref(database, `messages/${messageId}`);
   await update(messageRef, { isRead });
+};
+
+export const updateMessageDeliveredStatus = async (messageId: string, isDelivered: boolean) => {
+  const messageRef = ref(database, `messages/${messageId}`);
+  await update(messageRef, { isDelivered });
 };
 
 export const subscribeToMessages = (callback: (messages: Message[]) => void) => {
@@ -184,7 +185,25 @@ export const subscribeToMessages = (callback: (messages: Message[]) => void) => 
   });
 };
 
-// User Operations
+export const createNote = async (note: Note) => {
+  const newNoteRef = push(ref(database, 'notes'));
+  await set(newNoteRef, { ...note, id: newNoteRef.key });
+};
+
+export const deleteNote = async (noteId: string) => {
+  const noteRef = ref(database, `notes/${noteId}`);
+  await set(noteRef, null);
+};
+
+export const subscribeToNotes = (callback: (notes: Note[]) => void) => {
+  const notesRef = ref(database, 'notes');
+  onValue(notesRef, (snapshot) => {
+    const data = snapshot.val();
+    const notes: Note[] = data ? Object.values(data) : [];
+    callback(notes);
+  });
+};
+
 export const updateUserStatus = async (user: User) => {
   if (!user || !user.id) return;
 
@@ -210,12 +229,10 @@ export const updateUserStatus = async (user: User) => {
       });
   });
 
-  // Clear any existing activity timeout
   if (window.activityTimeout) {
     clearTimeout(window.activityTimeout);
   }
 
-  // Set up activity monitoring
   const activityEvents = ['mousedown', 'keydown', 'touchstart', 'mousemove'];
   let timeoutId: NodeJS.Timeout;
 
@@ -227,7 +244,7 @@ export const updateUserStatus = async (user: User) => {
         isOnline: false,
         lastSeen: new Date().toISOString()
       });
-    }, 60000); // Set to offline after 1 minute of inactivity
+    }, 60000);
   };
 
   const handleActivity = () => {
@@ -244,7 +261,6 @@ export const updateUserStatus = async (user: User) => {
     window.addEventListener(event, handleActivity);
   });
 
-  // Initial status
   set(userStatusRef, {
     ...user,
     isOnline: true,
@@ -253,7 +269,6 @@ export const updateUserStatus = async (user: User) => {
 
   resetActivityTimeout();
 
-  // Cleanup function
   return () => {
     activityEvents.forEach(event => {
       window.removeEventListener(event, handleActivity);

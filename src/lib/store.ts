@@ -1,8 +1,7 @@
-
 import { create } from 'zustand';
-import { ChatState, Message, User } from './types';
+import { ChatState, Message, User, Note } from './types';
 import { persist } from 'zustand/middleware';
-import { sendMessage, updateUserStatus, subscribeToMessages, subscribeToUsers, updateMessageReadStatus } from './firebase';
+import { sendMessage, updateUserStatus, subscribeToMessages, subscribeToUsers, updateMessageReadStatus, updateMessageDeliveredStatus, subscribeToNotes, createNote, deleteNote as firebaseDeleteNote } from './firebase';
 
 const loadUserFromStorage = (): User | null => {
   const sessionUser = sessionStorage.getItem('currentUser');
@@ -28,7 +27,6 @@ const saveUserToStorage = (user: User | null) => {
     date.setTime(date.getTime() + (7 * 24 * 60 * 60 * 1000));
     document.cookie = `currentUser=${encodeURIComponent(JSON.stringify(user))}; expires=${date.toUTCString()}; path=/`;
   } else {
-    // Clear storage if user is not valid
     sessionStorage.removeItem('currentUser');
     document.cookie = 'currentUser=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
   }
@@ -48,28 +46,27 @@ const saveLastActiveChatId = (chatId: string | null) => {
 
 export const useChatStore = create<ChatState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       currentUser: loadUserFromStorage(),
       selectedUser: null,
       messages: [],
       onlineUsers: [],
+      notes: [],
       lastActiveChatId: loadLastActiveChatId(),
+      
       setCurrentUser: async (user: User) => {
         try {
-          // Only save valid users
           if (user && user.id) {
             saveUserToStorage(user);
             const cleanup = await updateUserStatus(user);
             set({ currentUser: user });
             
-            // Handle cleanup when component unmounts
             window.addEventListener('beforeunload', cleanup);
             return () => {
               cleanup();
               window.removeEventListener('beforeunload', cleanup);
             };
           } else {
-            // Clear storage for invalid users
             saveUserToStorage(null);
             set({ currentUser: null });
           }
@@ -83,12 +80,10 @@ export const useChatStore = create<ChatState>()(
           if (user && user.id !== state.currentUser?.id) {
             saveLastActiveChatId(user.id);
             
-            // Mark messages as read immediately
             const updatedMessages = state.messages.map(msg => {
               if (msg.senderId === user.id && 
                   msg.receiverId === state.currentUser?.id && 
                   !msg.isRead) {
-                // Update read status in Firebase
                 updateMessageReadStatus(msg.id, true)
                   .catch(console.error);
                 return { ...msg, isRead: true };
@@ -112,7 +107,6 @@ export const useChatStore = create<ChatState>()(
       },
       addMessage: async (message: Message) => {
         set((state) => {
-          // Check for duplicate messages
           const messageExists = state.messages.some(msg => 
             msg.id === message.id || 
             (msg.senderId === message.senderId && 
@@ -122,7 +116,11 @@ export const useChatStore = create<ChatState>()(
           );
           
           if (!messageExists) {
-            return { messages: [...state.messages, message] };
+            const updatedMessage = { 
+              ...message, 
+              isDelivered: message.senderId === state.currentUser?.id ? true : false 
+            };
+            return { messages: [...state.messages, updatedMessage] };
           }
           return state;
         });
@@ -134,17 +132,62 @@ export const useChatStore = create<ChatState>()(
         }
       },
       updateOnlineUsers: (users: User[]) => set({ onlineUsers: users }),
+      setMessageDelivered: (messageId: string) => {
+        set(state => {
+          const updatedMessages = state.messages.map(msg => {
+            if (msg.id === messageId) {
+              updateMessageDeliveredStatus(messageId, true)
+                .catch(console.error);
+              return { ...msg, isDelivered: true };
+            }
+            return msg;
+          });
+          return { messages: updatedMessages };
+        });
+      },
+      setMessageRead: (messageId: string) => {
+        set(state => {
+          const updatedMessages = state.messages.map(msg => {
+            if (msg.id === messageId) {
+              updateMessageReadStatus(messageId, true)
+                .catch(console.error);
+              return { ...msg, isRead: true };
+            }
+            return msg;
+          });
+          return { messages: updatedMessages };
+        });
+      },
+      addNote: async (note: Note) => {
+        set(state => ({ notes: [...state.notes, note] }));
+        try {
+          await createNote(note);
+        } catch (error) {
+          console.error('Error creating note:', error);
+        }
+      },
+      deleteNote: async (noteId: string) => {
+        set(state => ({ 
+          notes: state.notes.filter(note => note.id !== noteId)
+        }));
+        
+        try {
+          await firebaseDeleteNote(noteId);
+        } catch (error) {
+          console.error('Error deleting note:', error);
+        }
+      }
     }),
     {
       name: 'chat-storage',
       partialize: (state) => ({ 
-        messages: state.messages
+        messages: state.messages,
+        notes: state.notes
       }),
     }
   )
 );
 
-// Subscribe to real-time updates
 if (typeof window !== 'undefined') {
   subscribeToMessages((messages) => {
     useChatStore.setState({ messages });
@@ -152,5 +195,9 @@ if (typeof window !== 'undefined') {
 
   subscribeToUsers((users) => {
     useChatStore.setState({ onlineUsers: users });
+  });
+  
+  subscribeToNotes((notes) => {
+    useChatStore.setState({ notes });
   });
 }

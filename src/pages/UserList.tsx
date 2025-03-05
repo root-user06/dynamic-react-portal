@@ -1,25 +1,31 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useChatStore } from '@/lib/store';
-import { User } from '@/lib/types';
-import { Search } from 'lucide-react';
+import { User, Note } from '@/lib/types';
+import { Search, PlusCircle, FileText, Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import Loader from '@/components/Loader';
+import NoteModal from '@/components/NoteModal';
+import NoteItem from '@/components/NoteItem';
+import NoteDetailModal from '@/components/NoteDetailModal';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { toast } from '@/components/ui/use-toast';
 
 const UserList = () => {
-  const { onlineUsers, currentUser, messages } = useChatStore();
+  const { onlineUsers, currentUser, messages, notes, deleteNote } = useChatStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const navigate = useNavigate();
 
   // Simulate loading state
-  useState(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1000);
     return () => clearTimeout(timer);
-  });
+  }, []);
 
   const getLastMessage = (userId: string) => {
     return messages
@@ -41,10 +47,44 @@ const UserList = () => {
     navigate(`/chat/${user.id}`);
   };
 
+  const handleOpenNoteModal = () => {
+    setIsNoteModalOpen(true);
+  };
+
+  const handleCloseNoteModal = () => {
+    setIsNoteModalOpen(false);
+  };
+
+  const handleNoteClick = (note: Note) => {
+    setSelectedNote(note);
+  };
+
+  const handleCloseNoteDetail = () => {
+    setSelectedNote(null);
+  };
+  
+  const handleDeleteNote = (noteId: string) => {
+    deleteNote(noteId);
+    toast({
+      title: "Note deleted",
+      description: "Your note has been deleted successfully",
+    });
+  };
+
   const onlineUsersFiltered = onlineUsers.filter(user => 
     user.id !== currentUser?.id && 
     user.isOnline
   );
+  
+  // Get my notes
+  const myNotes = notes
+    .filter(note => note.creatorId === currentUser?.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  
+  // Get other users' notes
+  const otherUsersNotes = notes
+    .filter(note => note.creatorId !== currentUser?.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const filteredAndSortedUsers = onlineUsers
     .filter(user => 
@@ -63,7 +103,7 @@ const UserList = () => {
     });
 
   if (isLoading) {
-    return <Loader />;
+    return <Loader type="skeleton" skeletonType="userList" />;
   }
 
   return (
@@ -89,9 +129,68 @@ const UserList = () => {
         </div>
       </div>
 
-      {/* Online Users Horizontal Scroll */}
+      {/* Stories and Online Users Horizontal Scroll */}
       <div className="p-4 overflow-x-auto whitespace-nowrap border-b border-gray-200">
         <div className="flex space-x-4">
+          {/* Current user's profile with drop a thought */}
+          {currentUser && (
+            <div className="flex flex-col items-center cursor-pointer">
+              <div className="relative">
+                {myNotes.length > 0 && (
+                  <div 
+                    className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded-md shadow-sm border border-gray-200 text-xs max-w-[120px] truncate"
+                    onClick={() => handleNoteClick(myNotes[0])}
+                  >
+                    {myNotes[0].content.length > 60 
+                      ? `${myNotes[0].content.substring(0, 60)}...` 
+                      : myNotes[0].content}
+                  </div>
+                )}
+                <Avatar className="w-14 h-14 border border-gray-200">
+                  <AvatarFallback className="bg-gray-200 text-lg">
+                    {currentUser.name[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div onClick={handleOpenNoteModal} className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-200">
+                  <Plus className="w-4 h-4 text-[#46C8B6]" />
+                </div>
+              </div>
+              <div className="text-xs mt-1 text-gray-500 max-w-[70px] truncate">Create story</div>
+            </div>
+          )}
+
+          {/* Recent notes from other users */}
+          {otherUsersNotes.slice(0, 10).map(note => {
+            const noteCreator = onlineUsers.find(user => user.id === note.creatorId);
+            return (
+              <div
+                key={note.id}
+                className="flex flex-col items-center cursor-pointer"
+                onClick={() => handleNoteClick(note)}
+              >
+                {note.content.length > 0 && (
+                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded-md shadow-sm border border-gray-200 text-xs max-w-[120px] truncate">
+                    {note.content.length > 60 
+                      ? `${note.content.substring(0, 60)}...` 
+                      : note.content}
+                  </div>
+                )}
+                <div className="relative w-14 h-14 rounded-full overflow-hidden">
+                  <Avatar className="w-14 h-14">
+                    <AvatarFallback className="bg-gray-200 text-lg">
+                      {noteCreator?.name[0].toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  {noteCreator?.isOnline && (
+                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+                  )}
+                </div>
+                <span className="text-xs mt-1 max-w-[60px] truncate">{noteCreator?.name || 'User'}</span>
+              </div>
+            );
+          })}
+
+          {/* Online users */}
           {onlineUsersFiltered.map((user) => (
             <div
               key={user.id}
@@ -99,9 +198,11 @@ const UserList = () => {
               className="flex flex-col items-center cursor-pointer"
             >
               <div className="relative">
-                <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-lg">
-                  {user.name[0].toUpperCase()}
-                </div>
+                <Avatar className="w-14 h-14">
+                  <AvatarFallback className="bg-gray-200 text-lg">
+                    {user.name[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
               </div>
               <span className="text-xs mt-1 max-w-[60px] truncate">{user.name}</span>
@@ -124,9 +225,11 @@ const UserList = () => {
             >
               <div className="flex items-center space-x-3">
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600">
-                    {user.name[0].toUpperCase()}
-                  </div>
+                  <Avatar className="w-12 h-12">
+                    <AvatarFallback className="bg-gray-200">
+                      {user.name[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   {user.isOnline && (
                     <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
                   )}
@@ -164,6 +267,15 @@ const UserList = () => {
           );
         })}
       </div>
+
+      {/* Modals */}
+      <NoteModal isOpen={isNoteModalOpen} onClose={handleCloseNoteModal} />
+      <NoteDetailModal 
+        note={selectedNote} 
+        isOpen={selectedNote !== null} 
+        onClose={handleCloseNoteDetail}
+        onDelete={() => selectedNote && handleDeleteNote(selectedNote.id)}
+      />
     </div>
   );
 };

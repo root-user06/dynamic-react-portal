@@ -1,9 +1,10 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '@/lib/store';
 import { Message } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, MoreVertical, Phone, Video, ChevronLeft } from 'lucide-react';
+import { Send, MoreVertical, Phone, Video, ChevronLeft, Check, CheckCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,7 +16,7 @@ interface ChatWindowProps {
 
 const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState('');
-  const { messages, currentUser, selectedUser, addMessage } = useChatStore();
+  const { messages, currentUser, selectedUser, addMessage, setMessageRead } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +36,21 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
     }
   }, [selectedUser]);
 
+  // Mark messages as read when they appear in the chat window
+  useEffect(() => {
+    if (selectedUser && currentUser) {
+      const unreadMessages = messages.filter(
+        msg => msg.senderId === selectedUser.id && 
+               msg.receiverId === currentUser.id && 
+               !msg.isRead
+      );
+      
+      unreadMessages.forEach(msg => {
+        setMessageRead(msg.id);
+      });
+    }
+  }, [messages, selectedUser, currentUser, setMessageRead]);
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim() && currentUser && selectedUser) {
@@ -44,11 +60,24 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
         receiverId: selectedUser.id,
         content: newMessage.trim(),
         timestamp: new Date().toISOString(),
-        isRead: false
+        isRead: false,
+        isDelivered: false
       };
       addMessage(message);
       setNewMessage('');
     }
+  };
+
+  const renderMessageStatus = (message: Message) => {
+    if (message.senderId !== currentUser?.id) return null;
+    
+    if (message.isRead) {
+      return <CheckCheck className="h-3.5 w-3.5 text-blue-500" />;
+    } else if (message.isDelivered) {
+      return <Check className="h-3.5 w-3.5 text-gray-400" />;
+    }
+    
+    return null;
   };
 
   if (!selectedUser || !currentUser) {
@@ -114,6 +143,7 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
                 variant="ghost" 
                 size="icon" 
                 className="text-gray-600"
+                onClick={onViewProfile}
               >
                 <MoreVertical className="h-5 w-5" />
               </Button>
@@ -154,11 +184,14 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
                       : 'bg-white text-gray-900 rounded-bl-none shadow-sm'
                   }`}>
                     <p className="break-words text-sm">{message.content}</p>
-                    <div className={`text-[10px] ${isSender ? 'text-black' : 'text-black'} mt-1`}>
-                      {new Date(message.timestamp).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
+                    <div className={`text-[10px] ${isSender ? 'text-black' : 'text-black'} mt-1 flex items-center justify-end space-x-1`}>
+                      <span>
+                        {new Date(message.timestamp).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </span>
+                      {renderMessageStatus(message)}
                     </div>
                   </div>
                 </div>

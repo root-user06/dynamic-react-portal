@@ -4,8 +4,8 @@ export interface User {
   name: string;
   isOnline: boolean;
   lastSeen: string;
-  email?: string; // Optional for future authentication
-  photoURL?: string; // Optional for future profile photos
+  email?: string;
+  photoURL?: string;
 }
 
 export interface Message {
@@ -15,8 +15,16 @@ export interface Message {
   content: string;
   timestamp: string;
   isRead: boolean;
-  callType?: 'audio' | 'video'; // Optional property for call messages
-  callStatus?: 'started' | 'ended' | 'missed' | 'outgoing' | 'incoming'; // Optional property for call status
+  isDelivered?: boolean;
+  callType?: 'audio' | 'video';
+  callStatus?: 'started' | 'ended' | 'missed' | 'outgoing' | 'incoming';
+}
+
+export interface Note {
+  id: string;
+  creatorId: string;
+  content: string;
+  createdAt: string;
 }
 
 export interface ChatState {
@@ -24,9 +32,14 @@ export interface ChatState {
   selectedUser: User | null;
   messages: Message[];
   onlineUsers: User[];
+  notes: Note[];
   lastActiveChatId: string | null;
   setCurrentUser: (user: User) => void;
   setSelectedUser: (user: User | null) => void;
   addMessage: (message: Message) => void;
   updateOnlineUsers: (users: User[]) => void;
+  setMessageDelivered: (messageId: string) => void;
+  setMessageRead: (messageId: string) => void;
+  addNote: (note: Note) => void;
+  deleteNote: (noteId: string) => void;
 }

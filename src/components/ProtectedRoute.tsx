@@ -56,7 +56,7 @@ const ProtectedRoute = ({ children, requireAuth = true }: ProtectedRouteProps) =
   
   if (!requireAuth && isAuthenticated) {
     // Redirect to chat if auth is not required (login/signup pages) but user is already authenticated
-    return <Navigate to="/chat" replace />;
+    return <Navigate to="/userlist" replace />;
   }
   
   return <>{children}</>;
