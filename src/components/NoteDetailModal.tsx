@@ -37,10 +37,10 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, isOpen, onClose
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md p-0 bg-white rounded-xl">
-        <DialogHeader className="p-4 border-b border-gray-100">
+      <DialogContent className="sm:max-w-md p-0 bg-white rounded-2xl overflow-hidden">
+        <DialogHeader className="px-4 py-3 border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">Note</DialogTitle>
+            <DialogTitle className="text-lg font-medium">Note</DialogTitle>
             <div className="flex items-center space-x-2">
               {isOwnNote && onDelete && (
                 <Button variant="ghost" size="icon" onClick={handleDelete} className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50">
@@ -54,7 +54,7 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, isOpen, onClose
           </div>
         </DialogHeader>
         
-        <div className="p-4 space-y-4">
+        <div className="p-3 space-y-4">
           <div className="flex items-center space-x-3">
             <Avatar>
               {creator?.photoURL ? (
@@ -73,14 +73,14 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, isOpen, onClose
             </div>
           </div>
           
-          <div className="relative">
-            <div className="p-4 bg-gray-50 rounded-2xl relative">
-              <p className="whitespace-pre-wrap">{note.content}</p>
-              <div className="absolute -bottom-2 left-4 w-3 h-3 rotate-45 bg-gray-50"></div>
+          <div className="relative mx-auto max-w-sm">
+            <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 relative">
+              <p className="whitespace-pre-wrap text-sm">{note.content}</p>
+              <div className="absolute -bottom-2 left-4 w-3 h-3 rotate-45 bg-gray-50 border-r border-b border-gray-100"></div>
             </div>
           </div>
           
-          <div className="flex items-center justify-center pt-3">
+          <div className="flex items-center justify-center pt-2">
             <div className="text-xs text-gray-500">
               Expires in {timeRemaining}
             </div>

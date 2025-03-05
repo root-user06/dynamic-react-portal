@@ -2,11 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useChatStore } from '@/lib/store';
 import { User, Note } from '@/lib/types';
-import { Search, PlusCircle, FileText, Plus, Trash2 } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import NoteModal from '@/components/NoteModal';
-import NoteItem from '@/components/NoteItem';
 import NoteDetailModal from '@/components/NoteDetailModal';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/components/ui/use-toast';
@@ -129,7 +128,7 @@ const UserList = () => {
             placeholder="Search messages..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 w-full bg-muted/50"
+            className="pl-9 w-full bg-gray-100 border-0"
           />
         </div>
       </div>
@@ -143,24 +142,28 @@ const UserList = () => {
               <div className="relative">
                 {myNotes.length > 0 && (
                   <div 
-                    className="absolute -top-12 right-0 transform -translate-y-4 bg-white px-3 py-2 rounded-2xl shadow border border-gray-200 text-xs max-w-[120px] truncate after:content-[''] after:absolute after:bottom-0 after:left-4 after:w-3 after:h-3 after:rotate-45 after:bg-white after:border-r after:border-b after:border-gray-200 after:translate-y-1.5"
+                    className="absolute -top-16 left-1/2 transform -translate-x-1/2 -translate-y-2 bg-white px-3 py-2 rounded-3xl shadow-sm border border-gray-200 text-xs max-w-[130px] truncate after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:w-3 after:h-3 after:rotate-45 after:bg-white after:border-r after:border-b after:border-gray-200 after:translate-y-1.5 after:-translate-x-1/2"
                     onClick={() => handleNoteClick(myNotes[0])}
                   >
-                    {myNotes[0].content.length > 60 
-                      ? `${myNotes[0].content.substring(0, 60)}...` 
+                    {myNotes[0].content.length > 30 
+                      ? `${myNotes[0].content.substring(0, 30)}...` 
                       : myNotes[0].content}
                   </div>
                 )}
                 <Avatar className="w-14 h-14 border border-gray-200">
-                  <AvatarFallback className="bg-gray-200 text-lg">
-                    {currentUser.name[0].toUpperCase()}
-                  </AvatarFallback>
+                  {currentUser.photoURL ? (
+                    <img src={currentUser.photoURL} alt={currentUser.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <AvatarFallback className="bg-gray-200 text-lg">
+                      {currentUser.name[0].toUpperCase()}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 <div onClick={handleOpenNoteModal} className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-200">
-                  <Plus className="w-4 h-4 text-[#46C8B6]" />
+                  <Plus className="w-4 h-4 text-[#0084ff]" />
                 </div>
               </div>
-              <div className="text-xs mt-1 text-gray-500 max-w-[70px] truncate">Create story</div>
+              <div className="text-xs mt-1 max-w-[70px] truncate">Your story</div>
             </div>
           )}
 
@@ -175,16 +178,20 @@ const UserList = () => {
               >
                 <div className="relative">
                   {note.content.length > 0 && (
-                    <div className="absolute -top-12 right-0 transform -translate-y-4 bg-white px-3 py-2 rounded-2xl shadow border border-gray-200 text-xs max-w-[120px] truncate after:content-[''] after:absolute after:bottom-0 after:left-4 after:w-3 after:h-3 after:rotate-45 after:bg-white after:border-r after:border-b after:border-gray-200 after:translate-y-1.5">
-                      {note.content.length > 60 
-                        ? `${note.content.substring(0, 60)}...` 
+                    <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 -translate-y-2 bg-white px-3 py-2 rounded-3xl shadow-sm border border-gray-200 text-xs max-w-[130px] truncate after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:w-3 after:h-3 after:rotate-45 after:bg-white after:border-r after:border-b after:border-gray-200 after:translate-y-1.5 after:-translate-x-1/2">
+                      {note.content.length > 30 
+                        ? `${note.content.substring(0, 30)}...` 
                         : note.content}
                     </div>
                   )}
-                  <Avatar className="w-14 h-14">
-                    <AvatarFallback className="bg-gray-200 text-lg">
-                      {noteCreator?.name[0].toUpperCase() || '?'}
-                    </AvatarFallback>
+                  <Avatar className="w-14 h-14 border border-gray-200">
+                    {noteCreator?.photoURL ? (
+                      <img src={noteCreator.photoURL} alt={noteCreator.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <AvatarFallback className="bg-gray-200 text-lg">
+                        {noteCreator?.name[0].toUpperCase() || '?'}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                   {noteCreator?.isOnline && (
                     <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
@@ -203,10 +210,14 @@ const UserList = () => {
               className="flex flex-col items-center cursor-pointer"
             >
               <div className="relative">
-                <Avatar className="w-14 h-14">
-                  <AvatarFallback className="bg-gray-200 text-lg">
-                    {user.name[0].toUpperCase()}
-                  </AvatarFallback>
+                <Avatar className="w-14 h-14 border border-gray-200">
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt={user.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <AvatarFallback className="bg-gray-200 text-lg">
+                      {user.name[0].toUpperCase()}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
               </div>
@@ -231,9 +242,13 @@ const UserList = () => {
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <Avatar className="w-12 h-12">
-                    <AvatarFallback className="bg-gray-200">
-                      {user.name[0].toUpperCase()}
-                    </AvatarFallback>
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt={user.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <AvatarFallback className="bg-gray-200">
+                        {user.name[0].toUpperCase()}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                   {user.isOnline && (
                     <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
@@ -263,7 +278,7 @@ const UserList = () => {
                   )}
                 </div>
                 {unreadCount > 0 && (
-                  <div className="w-5 h-5 rounded-full bg-[#46C8B6] text-white text-xs flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-[#0084ff] text-white text-xs flex items-center justify-center">
                     {unreadCount}
                   </div>
                 )}

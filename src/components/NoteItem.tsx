@@ -4,7 +4,7 @@ import { Note, User } from '@/lib/types';
 import { useChatStore } from '@/lib/store';
 import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Trash2, MessageSquare } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 interface NoteItemProps {
   note: Note;
@@ -31,44 +31,38 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, onClick, showDelete = false, 
   
   return (
     <div 
-      className="flex flex-col min-w-[120px] max-w-[180px] bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow relative"
+      className="flex flex-col items-center cursor-pointer"
       onClick={onClick}
     >
-      <div className="relative p-3 border-b border-gray-200">
-        <MessageSquare className="absolute -top-4 right-2 text-gray-200 h-8 w-8 transform rotate-12" />
-        <div className="text-sm font-medium line-clamp-2">{note.content}</div>
-      </div>
-      <div className="p-2 flex items-center space-x-1">
-        <Avatar className="h-6 w-6">
+      <div className="relative">
+        <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 -translate-y-2 bg-white px-3 py-2 rounded-3xl shadow-sm border border-gray-200 text-xs max-w-[130px] truncate after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:w-3 after:h-3 after:rotate-45 after:bg-white after:border-r after:border-b after:border-gray-200 after:translate-y-1.5 after:-translate-x-1/2">
+          {note.content.length > 30 
+            ? `${note.content.substring(0, 30)}...` 
+            : note.content}
+        </div>
+        <Avatar className="w-14 h-14 border border-gray-200">
           {creator?.photoURL ? (
             <img src={creator.photoURL} alt={creator.name} className="h-full w-full object-cover" />
           ) : (
-            <AvatarFallback className="bg-gray-200 text-xs">
+            <AvatarFallback className="bg-gray-200 text-lg">
               {creator?.name[0] || '?'}
             </AvatarFallback>
           )}
         </Avatar>
-        <div className="text-xs text-gray-500 truncate">
-          {creator?.name || 'User'}
-        </div>
+        {creator?.isOnline && (
+          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+        )}
+        
+        {showDelete && isOwnNote && (
+          <button 
+            className="absolute -top-1 -right-1 p-1 bg-white rounded-full shadow border border-gray-200 hover:bg-red-50"
+            onClick={handleDelete}
+          >
+            <Trash2 className="h-3 w-3 text-red-500" />
+          </button>
+        )}
       </div>
-      <div className="px-2 pb-2 text-xs text-gray-400 flex justify-between items-center">
-        <span>
-          {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
-        </span>
-        <span className="text-[10px]">
-          Expires: {timeRemaining}
-        </span>
-      </div>
-      
-      {showDelete && isOwnNote && (
-        <button 
-          className="absolute top-1 right-1 p-1 bg-white rounded-full opacity-70 hover:opacity-100 transition-opacity"
-          onClick={handleDelete}
-        >
-          <Trash2 className="h-3.5 w-3.5 text-red-500" />
-        </button>
-      )}
+      <span className="text-xs mt-1 max-w-[60px] truncate">{creator?.name || 'User'}</span>
     </div>
   );
 };

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { X, MessageSquare } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useChatStore } from '@/lib/store';
 import { v4 as uuidv4 } from 'uuid';
 import { Note } from '@/lib/types';
@@ -75,17 +75,17 @@ const NoteModal: React.FC<NoteModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md p-0 bg-white rounded-xl overflow-hidden">
-        <DialogHeader className="p-4 border-b border-gray-100">
+      <DialogContent className="sm:max-w-md p-0 bg-white rounded-2xl overflow-hidden flex flex-col h-[80vh] sm:h-auto">
+        <DialogHeader className="px-4 py-3 border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">New note</DialogTitle>
+            <DialogTitle className="text-lg font-medium">New note</DialogTitle>
             <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
               <X className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
         
-        <div className="p-4 min-h-[200px] flex flex-col">
+        <div className="flex-1 p-4 flex flex-col justify-between overflow-auto">
           <Textarea
             value={noteContent}
             onChange={handleNoteChange}
@@ -94,38 +94,42 @@ const NoteModal: React.FC<NoteModalProps> = ({ isOpen, onClose }) => {
             maxLength={maxCharCount}
           />
           
-          <div className="text-right text-sm text-gray-500 mt-2">
+          <div className="text-right text-xs text-gray-500 mt-1">
             {noteContent.length}/{maxCharCount}
           </div>
         </div>
-        
-        {noteContent.trim() && (
-          <div className="px-4 pb-4 flex justify-center">
-            <div className="relative max-w-[250px]">
-              <div className="bg-gray-100 px-4 py-3 rounded-2xl text-sm relative">
+
+        {/* Preview */}
+        <div className="flex flex-1 flex-col items-center justify-center p-4">
+          {noteContent.trim() && (
+            <div className="relative max-w-[250px] mb-4">
+              <div className="bg-white px-4 py-2 rounded-3xl text-sm border border-gray-200 shadow-sm relative">
                 {noteContent.trim()}
-                <div className="absolute -bottom-2 left-4 w-3 h-3 rotate-45 bg-gray-100"></div>
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-white border-r border-b border-gray-200"></div>
               </div>
             </div>
-          </div>
-        )}
-        
-        {currentUser && (
-          <div className="flex flex-col items-center py-4">
-            <Avatar className="w-16 h-16">
-              {currentUser.photoURL ? (
-                <img src={currentUser.photoURL} alt={currentUser.name} className="h-full w-full object-cover" />
-              ) : (
-                <AvatarFallback className="bg-gray-200 text-xl">
-                  {currentUser.name[0].toUpperCase()}
-                </AvatarFallback>
-              )}
-            </Avatar>
-            <div className="text-xs text-gray-500 mt-2">
-              Friends can see your note for 24 hours
+          )}
+          
+          {currentUser && (
+            <div className="flex flex-col items-center">
+              <Avatar className="w-20 h-20 border border-gray-200">
+                {currentUser.photoURL ? (
+                  <img src={currentUser.photoURL} alt={currentUser.name} className="h-full w-full object-cover" />
+                ) : (
+                  <AvatarFallback className="bg-gray-200 text-xl">
+                    {currentUser.name[0].toUpperCase()}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div className="text-xs text-gray-500 mt-2">
+                {noteContent.length}/{maxCharCount} characters
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Friends can see your note for 24 hours
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
         
         <DialogFooter className="px-4 py-3 border-t border-gray-100 flex justify-between">
           <Button 
@@ -138,7 +142,7 @@ const NoteModal: React.FC<NoteModalProps> = ({ isOpen, onClose }) => {
           <Button 
             onClick={handleSaveNote}
             disabled={!noteContent.trim()}
-            className="bg-[#46C8B6] hover:bg-[#3baa9b] text-white"
+            className="bg-[#0084ff] hover:bg-[#0078e7] text-white"
           >
             Share
           </Button>
