@@ -7,6 +7,7 @@ import { Note } from '@/lib/types';
 import { useChatStore } from '@/lib/store';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
+import { DialogDescription } from '@/components/ui/dialog';
 
 interface NoteDetailModalProps {
   note: Note | null;
@@ -37,7 +38,7 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, isOpen, onClose
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md p-0 bg-white rounded-2xl overflow-hidden">
+      <DialogContent className="sm:max-w-md p-0 bg-white rounded-xl overflow-hidden">
         <DialogHeader className="px-4 py-3 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg font-medium">Note</DialogTitle>
@@ -52,9 +53,10 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, isOpen, onClose
               </Button>
             </div>
           </div>
+          <DialogDescription className="sr-only">View note details</DialogDescription>
         </DialogHeader>
         
-        <div className="p-3 space-y-4">
+        <div className="p-4 space-y-4">
           <div className="flex items-center space-x-3">
             <Avatar>
               {creator?.photoURL ? (
@@ -73,10 +75,9 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({ note, isOpen, onClose
             </div>
           </div>
           
-          <div className="relative mx-auto max-w-sm">
-            <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 relative">
+          <div className="flex items-center justify-center">
+            <div className="relative p-4 bg-white rounded-3xl border-2 border-black max-w-sm">
               <p className="whitespace-pre-wrap text-sm">{note.content}</p>
-              <div className="absolute -bottom-2 left-4 w-3 h-3 rotate-45 bg-gray-50 border-r border-b border-gray-100"></div>
             </div>
           </div>
           

@@ -102,7 +102,6 @@ const UserList = () => {
     });
 
   if (isLoading) {
-    // Simple loading indicator instead of the skeleton
     return (
       <div className="flex items-center justify-center h-full">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#46C8B6]"></div>
@@ -138,19 +137,26 @@ const UserList = () => {
         <div className="flex space-x-4">
           {/* Current user's profile with drop a thought */}
           {currentUser && (
-            <div className="flex flex-col items-center cursor-pointer">
-              <div className="relative">
-                {myNotes.length > 0 && (
-                  <div 
-                    className="absolute -top-16 left-1/2 transform -translate-x-1/2 -translate-y-2 bg-white px-3 py-2 rounded-3xl shadow-sm border border-gray-200 text-xs max-w-[130px] truncate after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:w-3 after:h-3 after:rotate-45 after:bg-white after:border-r after:border-b after:border-gray-200 after:translate-y-1.5 after:-translate-x-1/2"
-                    onClick={() => handleNoteClick(myNotes[0])}
-                  >
-                    {myNotes[0].content.length > 30 
-                      ? `${myNotes[0].content.substring(0, 30)}...` 
-                      : myNotes[0].content}
+            <div className="flex flex-col items-center cursor-pointer relative">
+              {myNotes.length > 0 ? (
+                <div 
+                  className="absolute -top-14 transform -translate-y-1/2 max-w-[120px] z-10"
+                  onClick={() => handleNoteClick(myNotes[0])}
+                >
+                  <div className="relative">
+                    <div className="p-2 rounded-3xl border-2 border-black bg-white text-xs text-center">
+                      {myNotes[0].content.length > 25 
+                        ? `${myNotes[0].content.substring(0, 25)}...` 
+                        : myNotes[0].content}
+                    </div>
+                    <div className="absolute -bottom-2 right-6 w-3 h-3 bg-white rounded-full border-2 border-black"></div>
+                    <div className="absolute -bottom-4 right-3 w-2 h-2 bg-white rounded-full border-2 border-black"></div>
                   </div>
-                )}
-                <Avatar className="w-14 h-14 border border-gray-200">
+                </div>
+              ) : null}
+              
+              <div className="relative mt-6">
+                <Avatar className="w-16 h-16 border border-gray-200">
                   {currentUser.photoURL ? (
                     <img src={currentUser.photoURL} alt={currentUser.name} className="h-full w-full object-cover" />
                   ) : (
@@ -168,23 +174,30 @@ const UserList = () => {
           )}
 
           {/* Recent notes from other users */}
-          {otherUsersNotes.slice(0, 10).map(note => {
+          {otherUsersNotes.map(note => {
             const noteCreator = onlineUsers.find(user => user.id === note.creatorId);
+            if (!noteCreator) return null;
+            
             return (
               <div
                 key={note.id}
-                className="flex flex-col items-center cursor-pointer"
+                className="flex flex-col items-center cursor-pointer relative"
                 onClick={() => handleNoteClick(note)}
               >
-                <div className="relative">
-                  {note.content.length > 0 && (
-                    <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 -translate-y-2 bg-white px-3 py-2 rounded-3xl shadow-sm border border-gray-200 text-xs max-w-[130px] truncate after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:w-3 after:h-3 after:rotate-45 after:bg-white after:border-r after:border-b after:border-gray-200 after:translate-y-1.5 after:-translate-x-1/2">
-                      {note.content.length > 30 
-                        ? `${note.content.substring(0, 30)}...` 
+                <div className="absolute -top-14 transform -translate-y-1/2 max-w-[120px] z-10">
+                  <div className="relative">
+                    <div className="p-2 rounded-3xl border-2 border-black bg-white text-xs text-center">
+                      {note.content.length > 25 
+                        ? `${note.content.substring(0, 25)}...` 
                         : note.content}
                     </div>
-                  )}
-                  <Avatar className="w-14 h-14 border border-gray-200">
+                    <div className="absolute -bottom-2 right-6 w-3 h-3 bg-white rounded-full border-2 border-black"></div>
+                    <div className="absolute -bottom-4 right-3 w-2 h-2 bg-white rounded-full border-2 border-black"></div>
+                  </div>
+                </div>
+                
+                <div className="relative mt-6">
+                  <Avatar className="w-16 h-16 border border-gray-200">
                     {noteCreator?.photoURL ? (
                       <img src={noteCreator.photoURL} alt={noteCreator.name} className="h-full w-full object-cover" />
                     ) : (
@@ -202,28 +215,30 @@ const UserList = () => {
             );
           })}
 
-          {/* Online users */}
-          {onlineUsersFiltered.map((user) => (
-            <div
-              key={user.id}
-              onClick={() => handleUserClick(user)}
-              className="flex flex-col items-center cursor-pointer"
-            >
-              <div className="relative">
-                <Avatar className="w-14 h-14 border border-gray-200">
-                  {user.photoURL ? (
-                    <img src={user.photoURL} alt={user.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <AvatarFallback className="bg-gray-200 text-lg">
-                      {user.name[0].toUpperCase()}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+          {/* Online users without notes */}
+          {onlineUsersFiltered
+            .filter(user => !otherUsersNotes.some(note => note.creatorId === user.id))
+            .map((user) => (
+              <div
+                key={user.id}
+                onClick={() => handleUserClick(user)}
+                className="flex flex-col items-center cursor-pointer mt-6"
+              >
+                <div className="relative">
+                  <Avatar className="w-16 h-16 border border-gray-200">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt={user.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <AvatarFallback className="bg-gray-200 text-lg">
+                        {user.name[0].toUpperCase()}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+                </div>
+                <span className="text-xs mt-1 max-w-[60px] truncate">{user.name}</span>
               </div>
-              <span className="text-xs mt-1 max-w-[60px] truncate">{user.name}</span>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
 

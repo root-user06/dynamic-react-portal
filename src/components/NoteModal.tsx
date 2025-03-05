@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Note } from '@/lib/types';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/components/ui/use-toast';
+import { DialogDescription } from '@/components/ui/dialog';
 
 interface NoteModalProps {
   isOpen: boolean;
@@ -75,74 +76,64 @@ const NoteModal: React.FC<NoteModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md p-0 bg-white rounded-2xl overflow-hidden flex flex-col h-[80vh] sm:h-auto">
-        <DialogHeader className="px-4 py-3 border-b border-gray-100">
+      <DialogContent className="sm:max-w-md p-4 bg-white rounded-xl overflow-hidden max-h-[90vh] sm:h-auto">
+        <DialogHeader className="mb-4">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-lg font-medium">New note</DialogTitle>
-            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+            <DialogTitle className="text-xl font-bold text-center w-full">What's on your mind?</DialogTitle>
+            <Button variant="ghost" size="icon" onClick={onClose} className="absolute right-4 top-4 h-8 w-8">
               <X className="h-4 w-4" />
             </Button>
           </div>
+          <DialogDescription className="sr-only">Create a new note</DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 p-4 flex flex-col justify-between overflow-auto">
-          <Textarea
-            value={noteContent}
-            onChange={handleNoteChange}
-            placeholder="What's on your mind?"
-            className="min-h-[150px] border-0 focus-visible:ring-0 text-base p-0 resize-none flex-grow"
-            maxLength={maxCharCount}
-          />
+        <div className="flex flex-col items-center justify-center">
+          {/* Thought bubble design for the note */}
+          <div className="w-full max-w-sm mx-auto mb-4">
+            <div className="relative">
+              <div className="p-4 rounded-3xl border-2 border-black bg-white">
+                <Textarea
+                  value={noteContent}
+                  onChange={handleNoteChange}
+                  placeholder="Type your thought here..."
+                  className="min-h-[120px] border-0 focus-visible:ring-0 text-base p-0 resize-none"
+                  maxLength={maxCharCount}
+                />
+              </div>
+              <div className="absolute -bottom-4 right-8 w-4 h-4 rounded-full border-2 border-black bg-white"></div>
+              <div className="absolute -bottom-8 right-4 w-3 h-3 rounded-full border-2 border-black bg-white"></div>
+            </div>
+          </div>
           
-          <div className="text-right text-xs text-gray-500 mt-1">
+          {/* Character count */}
+          <div className="text-right text-xs text-gray-500 w-full max-w-sm mb-6">
             {noteContent.length}/{maxCharCount}
           </div>
-        </div>
-
-        {/* Preview */}
-        <div className="flex flex-1 flex-col items-center justify-center p-4">
-          {noteContent.trim() && (
-            <div className="relative max-w-[250px] mb-4">
-              <div className="bg-white px-4 py-2 rounded-3xl text-sm border border-gray-200 shadow-sm relative">
-                {noteContent.trim()}
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-white border-r border-b border-gray-200"></div>
-              </div>
-            </div>
-          )}
           
+          {/* User avatar preview */}
           {currentUser && (
-            <div className="flex flex-col items-center">
-              <Avatar className="w-20 h-20 border border-gray-200">
+            <div className="flex flex-col items-center my-4">
+              <Avatar className="w-16 h-16 border border-gray-200">
                 {currentUser.photoURL ? (
                   <img src={currentUser.photoURL} alt={currentUser.name} className="h-full w-full object-cover" />
                 ) : (
-                  <AvatarFallback className="bg-gray-200 text-xl">
+                  <AvatarFallback className="bg-gray-200 text-lg">
                     {currentUser.name[0].toUpperCase()}
                   </AvatarFallback>
                 )}
               </Avatar>
               <div className="text-xs text-gray-500 mt-2">
-                {noteContent.length}/{maxCharCount} characters
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Friends can see your note for 24 hours
+                Visible to friends for 24 hours
               </div>
             </div>
           )}
         </div>
         
-        <DialogFooter className="px-4 py-3 border-t border-gray-100 flex justify-between">
-          <Button 
-            variant="ghost" 
-            onClick={onClose}
-            className="text-gray-500"
-          >
-            Cancel
-          </Button>
+        <DialogFooter className="mt-6">
           <Button 
             onClick={handleSaveNote}
             disabled={!noteContent.trim()}
-            className="bg-[#0084ff] hover:bg-[#0078e7] text-white"
+            className="w-full bg-[#0084ff] hover:bg-[#0078e7] text-white"
           >
             Share
           </Button>
