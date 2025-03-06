@@ -1,4 +1,3 @@
-
 import { createBrowserRouter } from "react-router-dom";
 import Chat from "./pages/Chat";
 import Signup from "./pages/Signup";
@@ -34,11 +33,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/email-verification",
-    element: (
-      <ProtectedRoute requireAuth={true} requireVerification={false}>
-        <EmailVerification />
-      </ProtectedRoute>
-    ),
+    element: <EmailVerification />,
   },
   {
     path: "/",

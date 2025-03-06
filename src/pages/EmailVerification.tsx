@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useChatStore } from '../lib/store';
 import { Button } from "@/components/ui/button";
 import { motion } from 'framer-motion';
@@ -147,9 +147,9 @@ const EmailVerification = () => {
                 <ArrowLeft className="h-4 w-4" />
                 Back to Create Account
               </Button>
-              <a href="/auth/login" className="text-black font-semibold hover:underline">
+              <Link to="/auth/login" className="text-black font-semibold hover:underline">
                 Return to Login
-              </a>
+              </Link>
             </div>
           </div>
         )}
