@@ -1,3 +1,4 @@
+
 import { initializeApp, getApp } from 'firebase/app';
 import { 
   getDatabase, 
@@ -22,6 +23,7 @@ import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
   updateProfile,
+  sendEmailVerification,
   sendPasswordResetEmail,
   AuthError
 } from 'firebase/auth';
@@ -103,7 +105,8 @@ export const registerWithEmail = async (email: string, password: string, name: s
     
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     
-    await userCredential.user.sendEmailVerification();
+    // Use the imported sendEmailVerification function instead of method on user
+    await sendEmailVerification(userCredential.user);
     
     await updateProfile(userCredential.user, { displayName: name });
     const user: User = {
@@ -329,7 +332,8 @@ export const resetPassword = async (email: string) => {
 export const resendVerificationEmail = async () => {
   const user = auth.currentUser;
   if (user) {
-    await user.sendEmailVerification();
+    // Use the imported sendEmailVerification function instead of method on user
+    await sendEmailVerification(user);
   } else {
     throw new Error('No user is currently signed in');
   }
