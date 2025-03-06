@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChatStore } from '../lib/store';
@@ -6,7 +7,7 @@ import { motion } from 'framer-motion';
 import { toast } from "@/components/ui/use-toast";
 import { resendVerificationEmail } from '../lib/firebase';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 const EmailVerification = () => {
   const navigate = useNavigate();
@@ -78,6 +79,10 @@ const EmailVerification = () => {
     }
   };
 
+  const handleBackToSignup = () => {
+    navigate('/auth/signup', { replace: true });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#ddecec]">
@@ -133,7 +138,15 @@ const EmailVerification = () => {
                 </>
               ) : 'Resend Verification Email'}
             </Button>
-            <div className="pt-4 border-t mt-6">
+            <div className="pt-4 border-t mt-6 flex flex-col space-y-3">
+              <Button 
+                onClick={handleBackToSignup} 
+                variant="ghost" 
+                className="flex items-center justify-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Create Account
+              </Button>
               <a href="/auth/login" className="text-black font-semibold hover:underline">
                 Return to Login
               </a>
