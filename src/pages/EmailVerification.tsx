@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChatStore } from '../lib/store';
@@ -18,10 +17,11 @@ const EmailVerification = () => {
   
   useEffect(() => {
     const auth = getAuth();
+    let unsubscribe: (() => void) | undefined;
     
     // Check if user is already verified and redirect if needed
     const checkVerification = async () => {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+      unsubscribe = onAuthStateChanged(auth, (user) => {
         setLoading(false);
         
         if (!user) {
@@ -49,11 +49,9 @@ const EmailVerification = () => {
           }
         });
       });
-      
-      return unsubscribe;
     };
     
-    const unsubscribe = checkVerification();
+    checkVerification();
     
     return () => {
       if (unsubscribe) unsubscribe();
