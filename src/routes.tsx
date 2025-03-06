@@ -5,6 +5,7 @@ import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import Landing from "./pages/Landing";
 import Login from "./pages/login"; // Fixed casing to match the actual file name
+import EmailVerification from "./pages/EmailVerification";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import UserList from "./pages/UserList";
@@ -32,9 +33,17 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    path: "/email-verification",
+    element: (
+      <ProtectedRoute requireAuth={true} requireVerification={false}>
+        <EmailVerification />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/",
     element: (
-      <ProtectedRoute requireAuth={true}>
+      <ProtectedRoute requireAuth={true} requireVerification={true}>
         <Layout />
       </ProtectedRoute>
     ),

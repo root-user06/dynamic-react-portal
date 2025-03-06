@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChatStore } from '../lib/store';
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { InputWithIcon } from "@/components/ui/input-with-icon";
 import { motion } from 'framer-motion';
 import { toast } from "@/components/ui/use-toast";
-import { registerWithEmail, loginWithGoogle, resendVerificationEmail } from '../lib/firebase';
+import { registerWithEmail, loginWithGoogle } from '../lib/firebase';
 import { Mail, Lock, UserIcon, Loader2, Check, AlertTriangle, Info } from 'lucide-react';
 import { getDatabase, ref, query, orderByChild, equalTo, get } from 'firebase/database';
 
@@ -85,15 +84,22 @@ const Signup = () => {
 
   useEffect(() => {
     const handleRedirect = async () => {
-      if (currentUser && lastActiveChatId && !isRedirecting) {
+      if (currentUser && !isRedirecting) {
         setIsRedirecting(true);
-        const lastActiveUser = onlineUsers.find(user => user.id === lastActiveChatId);
-        if (lastActiveUser) {
-          await setSelectedUser(lastActiveUser);
+        
+        // Redirect to verification page if email not verified
+        if (!currentUser.emailVerified) {
+          navigate('/email-verification', { replace: true });
+          return;
         }
-        navigate('/userlist', { replace: true });
-      } else if (currentUser && !isRedirecting) {
-        setIsRedirecting(true);
+        
+        // Otherwise redirect to normal flow
+        if (lastActiveChatId) {
+          const lastActiveUser = onlineUsers.find(user => user.id === lastActiveChatId);
+          if (lastActiveUser) {
+            await setSelectedUser(lastActiveUser);
+          }
+        }
         navigate('/userlist', { replace: true });
       }
     };
@@ -123,6 +129,11 @@ const Signup = () => {
         description: "Account created successfully! Please verify your email.",
         className: "bg-green-50 border-green-200"
       });
+      
+      // Redirect to verification page after short delay
+      setTimeout(() => {
+        navigate('/email-verification', { replace: true });
+      }, 1500);
     } catch (error: any) {
       toast({
         title: "Authentication Error",
@@ -155,23 +166,6 @@ const Signup = () => {
     }
   };
 
-  const handleResendVerification = async () => {
-    try {
-      await resendVerificationEmail();
-      toast({
-        title: "Email Sent",
-        description: "Verification email has been resent!",
-        className: "bg-green-50 border-green-200"
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
   if (isRedirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
@@ -201,17 +195,11 @@ const Signup = () => {
               We've sent a verification link to <span className="font-medium">{email}</span>. 
               Please check your inbox and verify your email to continue.
             </p>
-            <Button 
-              onClick={handleResendVerification} 
-              variant="outline" 
-              className="mt-4"
-            >
-              Resend Verification Email
-            </Button>
-            <div className="pt-4 border-t mt-4">
-              <a href="/auth/login" className="text-black font-semibold hover:underline">
-                Return to Login
-              </a>
+            <p className="text-gray-500 text-sm">
+              Redirecting to verification page...
+            </p>
+            <div className="flex justify-center mt-2">
+              <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
             </div>
           </div>
         ) : (

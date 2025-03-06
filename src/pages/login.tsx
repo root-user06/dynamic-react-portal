@@ -31,15 +31,22 @@ const Login = () => {
 
   useEffect(() => {
     const handleRedirect = async () => {
-      if (currentUser && lastActiveChatId && !isRedirecting) {
+      if (currentUser && !isRedirecting) {
         setIsRedirecting(true);
-        const lastActiveUser = onlineUsers.find(user => user.id === lastActiveChatId);
-        if (lastActiveUser) {
-          await setSelectedUser(lastActiveUser);
+        
+        // Redirect to verification page if email not verified
+        if (!currentUser.emailVerified) {
+          navigate('/email-verification', { replace: true });
+          return;
         }
-        navigate(from, { replace: true });
-      } else if (currentUser && !isRedirecting) {
-        setIsRedirecting(true);
+        
+        // Otherwise redirect to normal flow
+        if (lastActiveChatId) {
+          const lastActiveUser = onlineUsers.find(user => user.id === lastActiveChatId);
+          if (lastActiveUser) {
+            await setSelectedUser(lastActiveUser);
+          }
+        }
         navigate(from, { replace: true });
       }
     };
@@ -52,11 +59,21 @@ const Login = () => {
     try {
       const user = await loginWithEmail(email, password);
       setCurrentUser(user);
-      toast({
-        title: "Success",
-        description: "Logged in successfully!",
-        className: "bg-green-50 border-green-200"
-      });
+      
+      // Show different toast based on verification status
+      if (!user.emailVerified) {
+        toast({
+          title: "Email Verification Required",
+          description: "Please verify your email to access all features",
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Logged in successfully!",
+          className: "bg-green-50 border-green-200"
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Authentication Error",
