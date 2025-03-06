@@ -1,4 +1,3 @@
-
 import { initializeApp, getApp } from 'firebase/app';
 import { 
   getDatabase, 
@@ -94,14 +93,26 @@ const formatAuthError = (error: AuthError): string => {
 
 export const registerWithEmail = async (email: string, password: string, name: string) => {
   try {
+    const usersRef = ref(database, 'users');
+    const nameQuery = query(usersRef, orderByChild('name'), equalTo(name));
+    const nameSnapshot = await get(nameQuery);
+    
+    if (nameSnapshot.exists()) {
+      throw new Error('Username already exists. Please choose a different one.');
+    }
+    
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    
+    await userCredential.user.sendEmailVerification();
+    
     await updateProfile(userCredential.user, { displayName: name });
     const user: User = {
       id: userCredential.user.uid,
       name: name,
       email: email,
       isOnline: true,
-      lastSeen: new Date().toISOString()
+      lastSeen: new Date().toISOString(),
+      emailVerified: userCredential.user.emailVerified
     };
     await updateUserStatus(user);
     return user;
@@ -118,7 +129,8 @@ export const loginWithEmail = async (email: string, password: string) => {
       name: userCredential.user.displayName || 'User',
       email: email,
       isOnline: true,
-      lastSeen: new Date().toISOString()
+      lastSeen: new Date().toISOString(),
+      emailVerified: userCredential.user.emailVerified
     };
     await updateUserStatus(user);
     return user;
@@ -140,7 +152,8 @@ export const loginWithGoogle = async () => {
       email: result.user.email || undefined,
       photoURL: result.user.photoURL || undefined,
       isOnline: true,
-      lastSeen: new Date().toISOString()
+      lastSeen: new Date().toISOString(),
+      emailVerified: true
     };
     await updateUserStatus(user);
     return user;
@@ -310,6 +323,15 @@ export const resetPassword = async (email: string) => {
     await sendPasswordResetEmail(auth, email);
   } catch (error: any) {
     throw new Error(formatAuthError(error));
+  }
+};
+
+export const resendVerificationEmail = async () => {
+  const user = auth.currentUser;
+  if (user) {
+    await user.sendEmailVerification();
+  } else {
+    throw new Error('No user is currently signed in');
   }
 };
 

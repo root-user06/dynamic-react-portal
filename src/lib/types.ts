@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   name: string;
@@ -6,6 +5,7 @@ export interface User {
   lastSeen: string;
   email?: string;
   photoURL?: string;
+  emailVerified?: boolean;
 }
 
 export interface Message {
