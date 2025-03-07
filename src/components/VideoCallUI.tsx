@@ -74,6 +74,7 @@ const VideoCallUI = ({ peer, call, remoteUser, onEndCall, outgoing = false }: Vi
   useEffect(() => {
     const setupStream = async () => {
       try {
+        console.log("Setting up video call stream");
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: {
@@ -91,7 +92,9 @@ const VideoCallUI = ({ peer, call, remoteUser, onEndCall, outgoing = false }: Vi
         
         // If there's an active call, attach the stream
         if (call) {
+          console.log("Call object in VideoCallUI:", call);
           call.on('stream', (remoteStream) => {
+            console.log("Received remote stream in VideoCallUI");
             if (remoteVideoRef.current) {
               remoteVideoRef.current.srcObject = remoteStream;
             }
@@ -116,7 +119,9 @@ const VideoCallUI = ({ peer, call, remoteUser, onEndCall, outgoing = false }: Vi
         localStream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [call]);
+  }, [call, onEndCall]);
+  
+  console.log("VideoCallUI rendered, outgoing:", outgoing);
   
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">

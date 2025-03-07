@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Phone, X, Volume2 } from 'lucide-react';
+import { Phone, X, Volume2, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useChatStore } from '@/lib/store';
 import { User } from '@/lib/types';
@@ -22,6 +22,7 @@ const CallNotification = ({
   const [ringtone] = useState(new Audio('/ringtone.mp3'));
   
   useEffect(() => {
+    console.log("Call notification shown for:", caller.name, "Type:", callType);
     ringtone.loop = true;
     ringtone.play().catch(error => console.error("Error playing ringtone:", error));
     
@@ -44,7 +45,7 @@ const CallNotification = ({
             {callType === 'audio' ? (
               <Volume2 className="h-6 w-6" />
             ) : (
-              <Phone className="h-6 w-6" />
+              <Video className="h-6 w-6" />
             )}
           </div>
           

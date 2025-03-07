@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '@/lib/store';
 import { Message } from '@/lib/types';
@@ -68,6 +69,7 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
     
     setIncomingCall(incoming);
     
+    // Auto-reject call if no answer after 30 seconds
     setTimeout(() => {
       setIncomingCall(prev => {
         if (prev && prev.call.connectionId === incoming.call.connectionId) {
@@ -101,11 +103,13 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
     if (!selectedUser || !currentUser) return;
     
     try {
+      console.log("Initiating audio call to:", selectedUser.name);
       callSound.loop = true;
       callSound.play().catch(err => console.error("Error playing call sound:", err));
       
       const remotePeerId = selectedUser.id;
       const call = await callService.callUser(currentUser, remotePeerId, 'audio');
+      console.log("Call initiated:", call);
       setActiveCall(call);
       setIsInAudioCall(true);
       
@@ -126,11 +130,13 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
     if (!selectedUser || !currentUser) return;
     
     try {
+      console.log("Initiating video call to:", selectedUser.name);
       callSound.loop = true;
       callSound.play().catch(err => console.error("Error playing call sound:", err));
       
       const remotePeerId = selectedUser.id;
       const call = await callService.callUser(currentUser, remotePeerId, 'video');
+      console.log("Call initiated:", call);
       setActiveCall(call);
       setIsInVideoCall(true);
       
@@ -151,6 +157,7 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
     if (!incomingCall) return;
     
     try {
+      console.log("Accepting call from:", incomingCall.caller.name, "Type:", incomingCall.type);
       ringtone.pause();
       ringtone.currentTime = 0;
       
@@ -180,6 +187,7 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
   const rejectIncomingCall = () => {
     if (!incomingCall) return;
     
+    console.log("Rejecting call from:", incomingCall.caller.name);
     ringtone.pause();
     ringtone.currentTime = 0;
     
@@ -189,6 +197,7 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
   };
 
   const endCall = () => {
+    console.log("Ending current call");
     callSound.pause();
     callSound.currentTime = 0;
     

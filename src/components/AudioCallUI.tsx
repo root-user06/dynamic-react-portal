@@ -70,7 +70,9 @@ const AudioCallUI = ({ peer, call, remoteUser, onEndCall, outgoing = false }: Au
         
         // If there's an active call, attach the stream
         if (call) {
+          console.log("Call object in AudioCallUI:", call);
           call.on('stream', (remoteStream) => {
+            console.log("Received remote stream in AudioCallUI");
             if (remoteAudioRef.current) {
               remoteAudioRef.current.srcObject = remoteStream;
             }
@@ -95,7 +97,9 @@ const AudioCallUI = ({ peer, call, remoteUser, onEndCall, outgoing = false }: Au
         localStream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [call]);
+  }, [call, onEndCall]);
+  
+  console.log("AudioCallUI rendered, outgoing:", outgoing);
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex flex-col items-center justify-center">
