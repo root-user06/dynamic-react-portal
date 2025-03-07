@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '@/lib/store';
 import { Message } from '@/lib/types';
@@ -26,7 +25,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
   
-  // Call states
   const [isInAudioCall, setIsInAudioCall] = useState(false);
   const [isInVideoCall, setIsInVideoCall] = useState(false);
   const [activeCall, setActiveCall] = useState<MediaConnection | null>(null);
@@ -40,7 +38,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
   const [callSound] = useState(new Audio('/ringing.mp3'));
   const [callInitialized, setCallInitialized] = useState(false);
 
-  // Initialize call service
   useEffect(() => {
     if (currentUser && !callInitialized) {
       callService.initialize()
@@ -48,7 +45,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
           console.log(`Call service initialized with ID: ${peerId}`);
           setCallInitialized(true);
           
-          // Set up event listeners
           callService.addIncomingCallListener(handleIncomingCall);
           callService.addCallEndedListener(handleCallEnded);
         })
@@ -64,17 +60,14 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
   const handleIncomingCall = (incoming: { call: MediaConnection; caller: any; type: 'audio' | 'video' }) => {
     console.log("Incoming call from:", incoming.caller.name, "Type:", incoming.type);
     
-    // Stop any other sounds playing
     ringtone.pause();
     ringtone.currentTime = 0;
     
-    // Play ringtone
     ringtone.loop = true;
     ringtone.play().catch(err => console.error("Error playing ringtone:", err));
     
     setIncomingCall(incoming);
     
-    // Auto-reject call after 30 seconds if not answered
     setTimeout(() => {
       setIncomingCall(prev => {
         if (prev && prev.call.connectionId === incoming.call.connectionId) {
@@ -93,7 +86,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
     setIsInVideoCall(false);
     setActiveCall(null);
     
-    // Stop all sounds
     ringtone.pause();
     ringtone.currentTime = 0;
     callSound.pause();
@@ -109,19 +101,14 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
     if (!selectedUser || !currentUser) return;
     
     try {
-      // Play call sound
       callSound.loop = true;
       callSound.play().catch(err => console.error("Error playing call sound:", err));
       
-      // Get user's peer ID
-      const remotePeerId = selectedUser.id; // Using user ID as peer ID for simplicity
-      
-      // Initiate call
+      const remotePeerId = selectedUser.id;
       const call = await callService.callUser(currentUser, remotePeerId, 'audio');
       setActiveCall(call);
       setIsInAudioCall(true);
       
-      // Create a call message
       sendCallMessage('audio', 'outgoing');
     } catch (error) {
       console.error("Failed to initiate audio call:", error);
@@ -139,19 +126,14 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
     if (!selectedUser || !currentUser) return;
     
     try {
-      // Play call sound
       callSound.loop = true;
       callSound.play().catch(err => console.error("Error playing call sound:", err));
       
-      // Get user's peer ID
-      const remotePeerId = selectedUser.id; // Using user ID as peer ID for simplicity
-      
-      // Initiate call
+      const remotePeerId = selectedUser.id;
       const call = await callService.callUser(currentUser, remotePeerId, 'video');
       setActiveCall(call);
       setIsInVideoCall(true);
       
-      // Create a call message
       sendCallMessage('video', 'outgoing');
     } catch (error) {
       console.error("Failed to initiate video call:", error);
@@ -169,25 +151,20 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
     if (!incomingCall) return;
     
     try {
-      // Stop ringtone
       ringtone.pause();
       ringtone.currentTime = 0;
       
-      // Answer the call
       await callService.answerCall(incomingCall.call, incomingCall.type);
       setActiveCall(incomingCall.call);
       
-      // Set the appropriate call state
       if (incomingCall.type === 'audio') {
         setIsInAudioCall(true);
       } else {
         setIsInVideoCall(true);
       }
       
-      // Clear incoming call notification
       setIncomingCall(null);
       
-      // Create a call message
       sendCallMessage(incomingCall.type, 'incoming');
     } catch (error) {
       console.error("Failed to accept call:", error);
@@ -203,23 +180,18 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
   const rejectIncomingCall = () => {
     if (!incomingCall) return;
     
-    // Stop ringtone
     ringtone.pause();
     ringtone.currentTime = 0;
     
-    // Create a missed call message
     sendCallMessage(incomingCall.type, 'missed');
     
-    // Clear incoming call notification
     setIncomingCall(null);
   };
 
   const endCall = () => {
-    // Stop call sound
     callSound.pause();
     callSound.currentTime = 0;
     
-    // End the call
     callService.endCurrentCall();
   };
 
@@ -256,7 +228,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
     }
   }, [selectedUser]);
 
-  // Mark messages as read when they appear in the chat window
   useEffect(() => {
     if (selectedUser && currentUser) {
       const unreadMessages = messages.filter(
@@ -348,7 +319,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
 
   return (
     <div className="flex flex-col h-full bg-gray-50 select-none">
-      {/* Incoming call notification */}
       {incomingCall && (
         <CallNotification
           caller={incomingCall.caller}
@@ -358,10 +328,9 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
         />
       )}
       
-      {/* Active call UIs */}
       {isInAudioCall && (
         <AudioCallUI
-          peer={callService.peer!}
+          peer={callService.getPeer()}
           call={activeCall}
           remoteUser={selectedUser}
           onEndCall={endCall}
@@ -371,7 +340,7 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
       
       {isInVideoCall && (
         <VideoCallUI
-          peer={callService.peer!}
+          peer={callService.getPeer()}
           call={activeCall}
           remoteUser={selectedUser}
           onEndCall={endCall}
@@ -379,7 +348,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
         />
       )}
       
-      {/* Chat header */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
         <div className="p-4">
           <div className="flex items-center justify-between">
@@ -439,7 +407,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
         </div>
       </div>
 
-      {/* Messages area */}
       <div 
         ref={messageContainerRef}
         className="flex-1 overflow-y-auto p-4 space-y-4"
@@ -450,7 +417,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
             const showAvatar = index === 0 || 
                              filteredMessages[index - 1].senderId !== message.senderId;
             
-            // If it's a call message, render it differently
             if (message.callType) {
               return (
                 <motion.div
@@ -504,7 +470,6 @@ const ChatWindow = ({ showBackButton, onBack, onViewProfile }: ChatWindowProps) 
         <div ref={messagesEndRef} />
       </div>
       
-      {/* Message input */}
       <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
         <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
           <Input

@@ -78,6 +78,11 @@ class CallService {
     return this.peerId;
   }
   
+  // Add a public method to get the peer instance
+  public getPeer(): Peer | null {
+    return this.peer;
+  }
+  
   public callUser(user: User, remotePeerId: string, type: CallType = 'audio'): Promise<MediaConnection> {
     return new Promise((resolve, reject) => {
       if (!this.peer) {

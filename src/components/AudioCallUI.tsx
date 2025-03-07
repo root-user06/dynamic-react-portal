@@ -8,7 +8,7 @@ import Peer, { MediaConnection } from 'peerjs';
 import { toast } from '@/hooks/use-toast';
 
 interface AudioCallUIProps {
-  peer: Peer;
+  peer: Peer | null;
   call: MediaConnection | null;
   remoteUser: User;
   onEndCall: () => void;
