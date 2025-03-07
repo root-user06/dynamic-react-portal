@@ -5,12 +5,14 @@ import { useChatStore } from '@/lib/store';
 import { updateUserStatus } from '@/lib/firebase';
 import { useNavigate, useParams } from 'react-router-dom';
 import Loader from '@/components/Loader';
+import CallService from '@/lib/CallService';
 
 const Chat = () => {
   const { currentUser, selectedUser, setSelectedUser } = useChatStore();
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { id } = useParams();
+  const [callService] = useState(() => CallService.getInstance());
 
   // Simulate loading state
   useEffect(() => {
@@ -60,6 +62,25 @@ const Chat = () => {
       };
     }
   }, [currentUser]);
+
+  // Initialize call service
+  useEffect(() => {
+    // Initialize callService when component mounts
+    if (currentUser) {
+      callService.initialize().catch(err => 
+        console.error("Error initializing call service:", err)
+      );
+    }
+    
+    // Clean up call service when component unmounts
+    return () => {
+      // We don't fully destroy the service since it's a singleton
+      // and might be used by other components
+      if (callService.getCurrentCall()) {
+        callService.endCurrentCall();
+      }
+    };
+  }, [currentUser, callService]);
 
   if (isLoading) {
     return <Loader />;

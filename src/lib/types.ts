@@ -6,6 +6,7 @@ export interface User {
   lastSeen: string;
   email?: string;
   photoURL?: string;
+  peerId?: string; // Optional peer ID for calls
 }
 
 export interface Message {
@@ -43,6 +44,15 @@ export interface ChatState {
   addNote: (note: Note) => void;
   deleteNote: (noteId: string) => void;
 }
+
 export interface AudioCall {
-  highpassFilter : boolean;
+  highpassFilter: boolean;
+}
+
+export interface CallOptions {
+  audio: boolean;
+  video: boolean;
+  highpassFilter?: boolean;
+  noiseSuppression?: boolean;
+  echoCancellation?: boolean;
 }
