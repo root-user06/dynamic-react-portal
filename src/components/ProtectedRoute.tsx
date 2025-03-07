@@ -7,10 +7,9 @@ import Loader from './Loader';
 interface ProtectedRouteProps {
   children: ReactNode;
   requireAuth?: boolean;
-  requireVerification?: boolean;
 }
 
-const ProtectedRoute = ({ children, requireAuth = true, requireVerification = false }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, requireAuth = true }: ProtectedRouteProps) => {
   const { currentUser } = useChatStore();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +48,6 @@ const ProtectedRoute = ({ children, requireAuth = true, requireVerification = fa
   }
   
   const isAuthenticated = !!(currentUser && currentUser.id);
-  const isVerified = !!(currentUser && currentUser.emailVerified);
   
   if (requireAuth && !isAuthenticated) {
     // Redirect to landing page if auth is required but user isn't authenticated
@@ -59,15 +57,6 @@ const ProtectedRoute = ({ children, requireAuth = true, requireVerification = fa
   if (!requireAuth && isAuthenticated) {
     // Redirect to chat if auth is not required (login/signup pages) but user is already authenticated
     return <Navigate to="/userlist" replace />;
-  }
-  
-  // Check email verification if required
-  if (requireVerification && isAuthenticated && !isVerified) {
-    // User is logged in but email not verified, redirect to verification page
-    // Don't redirect if already on verification page
-    if (!location.pathname.includes('/email-verification')) {
-      return <Navigate to="/email-verification" replace />;
-    }
   }
   
   return <>{children}</>;

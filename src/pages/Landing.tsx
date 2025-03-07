@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
-import Loader from '@/components/Loader';
 
 // Demo messages for the animated chat
 const demoMessages = [
@@ -51,7 +50,7 @@ const Landing: React.FC = () => {
         return [...prev, demoMessages[currentIndex]];
       });
       setCurrentIndex(prev => prev + 1);
-    }, 3000); // Slow down the messages even more - show new one every 3 seconds
+    }, 4000); // Slow down the messages even more - show new one every 3 seconds
 
     return () => clearTimeout(messageTimeout);
   }, [currentIndex]);

@@ -1,14 +1,17 @@
 import { createBrowserRouter } from "react-router-dom";
-import Chat from "./pages/Chat";
-import Signup from "./pages/Signup";
-import NotFound from "./pages/NotFound";
-import Landing from "./pages/Landing";
-import Login from "./pages/login"; // Fixed casing to match the actual file name
-import EmailVerification from "./pages/EmailVerification";
+import { Suspense, lazy } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
-import UserList from "./pages/UserList";
-import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
+import Landing from "./pages/Landing";
+import Loader from "./components/Loader";
+
+// Lazy load pages
+const Chat = lazy(() => import("./pages/Chat"));
+const Signup = lazy(() => import("./pages/Signup"));
+const Login = lazy(() => import("./pages/login"));
+const UserList = lazy(() => import("./pages/UserList"));
+const Profile = lazy(() => import("./pages/Profile"));
 
 export const router = createBrowserRouter([
   {
@@ -19,7 +22,9 @@ export const router = createBrowserRouter([
     path: "/auth/signup",
     element: (
       <ProtectedRoute requireAuth={false}>
-        <Signup />
+        <Suspense fallback={<Loader />}>
+          <Signup />
+        </Suspense>
       </ProtectedRoute>
     ),
   },
@@ -27,46 +32,64 @@ export const router = createBrowserRouter([
     path: "/auth/login",
     element: (
       <ProtectedRoute requireAuth={false}>
-        <Login />
+        <Suspense fallback={<Loader />}>
+          <Login />
+        </Suspense>
       </ProtectedRoute>
     ),
   },
   {
-    path: "/email-verification",
-    element: <EmailVerification />,
-  },
-  {
     path: "/",
     element: (
-      <ProtectedRoute requireAuth={true} requireVerification={true}>
+      <ProtectedRoute requireAuth={true}>
         <Layout />
       </ProtectedRoute>
     ),
     children: [
       {
         path: "chat",
-        element: <Chat />,
+        element: (
+          <Suspense fallback={<Loader />}>
+            <Chat />
+          </Suspense>
+        ),
       },
       {
         path: "chat/:id",
-        element: <Chat />,
+        element: (
+          <Suspense fallback={<Loader />}>
+            <Chat />
+          </Suspense>
+        ),
       },
       {
         path: "userlist",
-        element: <UserList />,
+        element: (
+          <Suspense fallback={<Loader />}>
+            <UserList />
+          </Suspense>
+        ),
       },
       {
         path: "profile",
-        element: <Profile />,
+        element: (
+          <Suspense fallback={<Loader />}>
+            <Profile />
+          </Suspense>
+        ),
       },
       {
         path: "profile/:id",
-        element: <Profile />,
-      }
+        element: (
+          <Suspense fallback={<Loader />}>
+            <Profile />
+          </Suspense>
+        ),
+      },
     ],
   },
   {
     path: "*",
     element: <NotFound />,
-  }
+  },
 ]);

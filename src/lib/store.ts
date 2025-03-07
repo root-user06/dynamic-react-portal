@@ -159,20 +159,9 @@ export const useChatStore = create<ChatState>()(
         });
       },
       addNote: async (note: Note) => {
-        if (note.content.length > 70) {
-          throw new Error('Note content must be 70 characters or less');
-        }
-        
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24);
-        const noteWithExpiration = { ...note, expiresAt: expiresAt.toISOString() };
-        
-        set(state => ({ 
-          notes: state.notes.filter(n => n.creatorId !== note.creatorId).concat(noteWithExpiration) 
-        }));
-        
+        set(state => ({ notes: [...state.notes, note] }));
         try {
-          await createNote(noteWithExpiration);
+          await createNote(note);
         } catch (error) {
           console.error('Error creating note:', error);
         }

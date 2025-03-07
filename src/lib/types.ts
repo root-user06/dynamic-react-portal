@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   name: string;
@@ -5,7 +6,6 @@ export interface User {
   lastSeen: string;
   email?: string;
   photoURL?: string;
-  emailVerified?: boolean;
 }
 
 export interface Message {
@@ -25,7 +25,6 @@ export interface Note {
   creatorId: string;
   content: string;
   createdAt: string;
-  expiresAt: string; // Add expiration timestamp
 }
 
 export interface ChatState {
@@ -43,4 +42,7 @@ export interface ChatState {
   setMessageRead: (messageId: string) => void;
   addNote: (note: Note) => void;
   deleteNote: (noteId: string) => void;
+}
+export interface AudioCall {
+  highpassFilter : boolean;
 }

@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { toast } from "@/components/ui/use-toast";
 import { loginWithEmail, loginWithGoogle, resetPassword } from '../lib/firebase';
 import Loader from '@/components/Loader';
+import { Link } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -31,22 +32,15 @@ const Login = () => {
 
   useEffect(() => {
     const handleRedirect = async () => {
-      if (currentUser && !isRedirecting) {
+      if (currentUser && lastActiveChatId && !isRedirecting) {
         setIsRedirecting(true);
-        
-        // Redirect to verification page if email not verified
-        if (!currentUser.emailVerified) {
-          navigate('/email-verification', { replace: true });
-          return;
+        const lastActiveUser = onlineUsers.find(user => user.id === lastActiveChatId);
+        if (lastActiveUser) {
+          await setSelectedUser(lastActiveUser);
         }
-        
-        // Otherwise redirect to normal flow
-        if (lastActiveChatId) {
-          const lastActiveUser = onlineUsers.find(user => user.id === lastActiveChatId);
-          if (lastActiveUser) {
-            await setSelectedUser(lastActiveUser);
-          }
-        }
+        navigate(from, { replace: true });
+      } else if (currentUser && !isRedirecting) {
+        setIsRedirecting(true);
         navigate(from, { replace: true });
       }
     };
@@ -59,21 +53,11 @@ const Login = () => {
     try {
       const user = await loginWithEmail(email, password);
       setCurrentUser(user);
-      
-      // Show different toast based on verification status
-      if (!user.emailVerified) {
-        toast({
-          title: "Email Verification Required",
-          description: "Please verify your email to access all features",
-          variant: "default"
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Logged in successfully!",
-          className: "bg-green-50 border-green-200"
-        });
-      }
+      toast({
+        title: "Success",
+        description: "Logged in successfully!",
+        className: "bg-green-50 border-green-200"
+      });
     } catch (error: any) {
       toast({
         title: "Authentication Error",
@@ -244,9 +228,9 @@ const Login = () => {
 
           <p className="text-center text-sm text-gray-600 mt-4">
             Don't have an account?{' '}
-            <a href="/auth/signup" className="text-black font-semibold hover:underline">
+            <Link to="/auth/signup" className="text-black font-semibold hover:underline">
               Create Account
-            </a>
+            </Link>
           </p>
         </form>
       </motion.div>

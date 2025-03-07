@@ -1,19 +1,5 @@
-
 import { initializeApp, getApp } from 'firebase/app';
-import { 
-  getDatabase, 
-  ref, 
-  set, 
-  onValue, 
-  push, 
-  Database, 
-  update, 
-  onDisconnect,
-  query,
-  orderByChild,
-  equalTo,
-  get
-} from 'firebase/database';
+import { getDatabase, ref, set, onValue, push, Database, update, onDisconnect } from 'firebase/database';
 import { 
   getAuth, 
   createUserWithEmailAndPassword, 
@@ -23,7 +9,6 @@ import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
   updateProfile,
-  sendEmailVerification,
   sendPasswordResetEmail,
   AuthError
 } from 'firebase/auth';
@@ -52,7 +37,7 @@ try {
   console.log('Firebase initialized successfully');
 } catch (error: any) {
   if (error.code !== 'app/duplicate-app') {
-    console.error('Firebase initialization error:', error);
+    // console.error('Firebase initialization error:', error);
     throw error;
   }
   app = getApp();
@@ -95,27 +80,14 @@ const formatAuthError = (error: AuthError): string => {
 
 export const registerWithEmail = async (email: string, password: string, name: string) => {
   try {
-    const usersRef = ref(database, 'users');
-    const nameQuery = query(usersRef, orderByChild('name'), equalTo(name));
-    const nameSnapshot = await get(nameQuery);
-    
-    if (nameSnapshot.exists()) {
-      throw new Error('Username already exists. Please choose a different one.');
-    }
-    
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    
-    // Use the imported sendEmailVerification function instead of method on user
-    await sendEmailVerification(userCredential.user);
-    
     await updateProfile(userCredential.user, { displayName: name });
     const user: User = {
       id: userCredential.user.uid,
       name: name,
       email: email,
       isOnline: true,
-      lastSeen: new Date().toISOString(),
-      emailVerified: userCredential.user.emailVerified
+      lastSeen: new Date().toISOString()
     };
     await updateUserStatus(user);
     return user;
@@ -132,8 +104,7 @@ export const loginWithEmail = async (email: string, password: string) => {
       name: userCredential.user.displayName || 'User',
       email: email,
       isOnline: true,
-      lastSeen: new Date().toISOString(),
-      emailVerified: userCredential.user.emailVerified
+      lastSeen: new Date().toISOString()
     };
     await updateUserStatus(user);
     return user;
@@ -155,8 +126,7 @@ export const loginWithGoogle = async () => {
       email: result.user.email || undefined,
       photoURL: result.user.photoURL || undefined,
       isOnline: true,
-      lastSeen: new Date().toISOString(),
-      emailVerified: true
+      lastSeen: new Date().toISOString()
     };
     await updateUserStatus(user);
     return user;
@@ -326,16 +296,6 @@ export const resetPassword = async (email: string) => {
     await sendPasswordResetEmail(auth, email);
   } catch (error: any) {
     throw new Error(formatAuthError(error));
-  }
-};
-
-export const resendVerificationEmail = async () => {
-  const user = auth.currentUser;
-  if (user) {
-    // Use the imported sendEmailVerification function instead of method on user
-    await sendEmailVerification(user);
-  } else {
-    throw new Error('No user is currently signed in');
   }
 };
 
